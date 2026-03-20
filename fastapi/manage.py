@@ -132,33 +132,14 @@ def run_sql(args):
     
     print(f"Executing SQL from: {sql_file}")
     conn = psycopg2.connect(dsn)
-    conn.autocommit = True  # Enable autocommit for SELECT queries
+    conn.autocommit = True
     cursor = conn.cursor()
     
-    with open(sql_file, 'r') as f:
+    with open(sql_file, 'r', encoding='utf-8') as f:
         sql = f.read()
         try:
-            # Split on semicolons to execute multiple queries
-            for statement in sql.split(';'):
-                statement = statement.strip()
-                if not statement or statement.startswith('--'):
-                    continue
-                    
-                cursor.execute(statement)
-                
-                # If it's a SELECT, fetch and print results
-                if statement.upper().startswith('SELECT') or statement.upper().startswith('WITH'):
-                    rows = cursor.fetchall()
-                    if rows:
-                        # Print column names
-                        col_names = [desc[0] for desc in cursor.description]
-                        print("\n" + " | ".join(col_names))
-                        print("-" * 80)
-                        # Print rows
-                        for row in rows:
-                            print(" | ".join(str(val) for val in row))
-                        print()
-                        
+            # Execute the entire file at once (handles multi-statement SQL and functions)
+            cursor.execute(sql)
             print("✅ SQL executed successfully!")
         except Exception as e:
             print(f"❌ Error executing SQL: {e}")
@@ -179,8 +160,8 @@ def main():
     import_parser = subparsers.add_parser('import-pipelines', help='Import GEM pipeline data')
     import_parser.add_argument(
         '--geojson',
-        default='./data/europe_gas_pipelines.geojson',
-        help='Path to GEM pipeline GeoJSON file (default: ./data/europe_gas_pipelines.geojson)'
+        default='./data/GEM-GGIT-Gas-Pipelines-2025-11.geojson',
+        help='Path to GEM pipeline GeoJSON file (default: ./data/GEM-GGIT-Gas-Pipelines-2025-11.geojson)'
     )
     import_parser.add_argument(
         '--seed-nodes-only',

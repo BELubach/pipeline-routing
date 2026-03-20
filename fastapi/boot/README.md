@@ -33,10 +33,10 @@ Seeds ~50 well-known hubs, LNG terminals, and border crossings.
 
 **Option B - Full Import:**
 1. Download GeoJSON from [Global Gas Infrastructure Tracker](https://globalenergymonitor.org/projects/global-gas-infrastructure-tracker/)
-2. Save to `./data/europe_gas_pipelines.geojson`
+2. Save to `./data/GEM-GGIT-Gas-Pipelines-2025-11.geojson`
 3. Run:
    ```bash
-   python manage.py import-pipelines --geojson ./data/europe_gas_pipelines.geojson
+  python manage.py import-pipelines --geojson ./data/GEM-GGIT-Gas-Pipelines-2025-11.geojson --global-scope
    ```
 
 **Required:** Yes, to have data to route through
@@ -97,10 +97,3 @@ These scripts are **idempotent** where possible:
 
 ---
 
-## sMore Information
-
-See [PIPELINE_README.md](../PIPELINE_README.md) in the project root for:
-- Complete API documentation
-- Detailed architecture overview
-- Data source information
-- Troubleshooting guide

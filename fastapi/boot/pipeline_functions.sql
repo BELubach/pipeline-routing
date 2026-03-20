@@ -86,9 +86,6 @@ BEGIN
     SET cost_composite = -1,
         reverse_cost_composite = -1
     WHERE status NOT IN ('operating', 'construction');
-
-    RAISE NOTICE 'Edge costs recomputed for % edges',
-        (SELECT COUNT(*) FROM pipeline_edges WHERE cost_composite > 0);
 END;
 $$;
 
@@ -105,7 +102,8 @@ SELECT
     cost_composite          AS cost,
     reverse_cost_composite  AS reverse_cost
 FROM pipeline_edges
-WHERE status IN ('operating', 'construction');  -- exclude retired/planned
+WHERE status IN ('operating', 'construction')
+  AND source != target;  -- exclude self-loops and retired/planned
 
 -- =============================================================
 -- FUNCTION: nearest_node()
@@ -184,7 +182,8 @@ BEGIN
     edges_sql := format(
         'SELECT id, source, target, %s AS cost, %s AS reverse_cost
          FROM pipeline_edges
-         WHERE status IN (''operating'', ''construction'')',
+         WHERE status IN (''operating'', ''construction'')
+           AND source != target',
         cost_col, rcost_col
     );
 
