@@ -1,0 +1,12 @@
+/* PrimeNG specific overrides for proper integration with Tailwind */
+:host ::ng-deep .p-password {
+  width: 100%;
+}
+
+:host ::ng-deep .p-password input {
+  width: 100%;
+}
+
+:host ::ng-deep .p-input-icon-left > i {
+  left: 0.75rem;
+}

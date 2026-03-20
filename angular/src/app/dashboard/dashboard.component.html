@@ -1,0 +1,126 @@
+<div class="min-h-screen bg-gradient-to-br from-sand-50 to-amber-50">
+  <!-- Header -->
+  <header class="bg-white shadow-sm border-b border-sand-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-2xl font-bold text-burgundy-900">Dashboard</h1>
+          <p class="text-sm text-stone-600 mt-1">Welcome back!</p>
+        </div>
+        
+        <div class="flex items-center gap-4">
+          @if (user()) {
+            <div class="flex items-center gap-3">
+              <div class="text-right">
+                <div class="flex items-center gap-2">
+                  <p class="text-sm font-medium text-stone-900">{{ user()!.username || user()!.email }}</p>
+                  <p-tag 
+                    [value]="getRoleBadgeLabel()" 
+                    [severity]="getRoleBadgeSeverity()"
+                    styleClass="text-xs">
+                  </p-tag>
+                </div>
+                <p class="text-xs text-stone-500">{{ user()!.email }}</p>
+              </div>
+              <p-avatar 
+                [label]="getUserInitials()" 
+                styleClass="bg-burgundy-600 text-white"
+                shape="circle"
+                size="large">
+              </p-avatar>
+            </div>
+          }
+          
+          <p-button 
+            label="Logout" 
+            severity="secondary"
+            (onClick)="onLogout()"
+            icon="pi pi-sign-out"
+            [outlined]="true">
+          </p-button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    @if (loading()) {
+      <div class="flex justify-center items-center h-64">
+        <i class="pi pi-spin pi-spinner text-4xl text-burgundy-600"></i>
+      </div>
+    } @else if (user()) {
+      <!-- Quick Actions -->
+      <div class="mb-8">
+        <p-card>
+          <ng-template pTemplate="header">
+            <div class="p-4">
+              <h2 class="text-xl font-semibold text-burgundy-900">
+                <i class="pi pi-bolt mr-2"></i>
+                Quick Actions
+              </h2>
+            </div>
+          </ng-template>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="flex flex-col p-4 bg-gradient-to-br from-green-50 to-teal-50 rounded-lg border border-green-200 hover:shadow-md transition-shadow">
+              <div class="flex items-center mb-3">
+                <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mr-3">
+                  <i class="pi pi-plus text-white text-xl"></i>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-stone-900">Add Plant</h3>
+                  <p class="text-sm text-stone-600">Create a new plant</p>
+                </div>
+              </div>
+              <p-button 
+                label="Add Plant" 
+                icon="pi pi-plus"
+                (onClick)="goToAddPlant()"
+                severity="success"
+                [style]="{'width': '100%'}">
+              </p-button>
+            </div>
+
+            <div class="flex flex-col p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200 hover:shadow-md transition-shadow">
+              <div class="flex items-center mb-3">
+                <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mr-3">
+                  <i class="pi pi-list text-white text-xl"></i>
+                </div>
+                <div>
+                  <h3 class="font-semibold text-stone-900">View Plants</h3>
+                  <p class="text-sm text-stone-600">Manage all plants</p>
+                </div>
+              </div>
+              <p-button 
+                label="View All Plants" 
+                icon="pi pi-list"
+                (onClick)="goToPlantsList()"
+                severity="info"
+                [style]="{'width': '100%'}">
+              </p-button>
+            </div>
+          </div>
+        </p-card>
+      </div>
+
+      <!-- Role-Based Dashboard Views -->
+      @switch (user()!.role) {
+        @case (UserRole.CLUSTER_ADMIN) {
+          <app-cluster-admin-view [user]="user()!"></app-cluster-admin-view>
+        }
+        @case (UserRole.COMPANY_OWNER) {
+          <app-company-owner-view [user]="user()!"></app-company-owner-view>
+        }
+        @case (UserRole.UTILITY_PROVIDER) {
+          <app-utility-provider-view [user]="user()!"></app-utility-provider-view>
+        }
+        @default {
+          <div class="text-center py-12">
+            <i class="pi pi-exclamation-triangle text-4xl text-amber-600 mb-4"></i>
+            <p class="text-lg text-stone-700">Unknown user role. Please contact support.</p>
+          </div>
+        }
+      }
+    }
+  </main>
+</div>

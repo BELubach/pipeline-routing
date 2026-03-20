@@ -1,0 +1,152 @@
+<div class="min-h-screen bg-gradient-to-br from-sand-50 to-amber-50">
+  <!-- Header -->
+  <header class="bg-white shadow-sm border-b border-sand-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-2xl font-bold text-burgundy-900">
+            @if (isEditMode()) {
+              Edit Plant
+            } @else {
+              Plant Details
+            }
+          </h1>
+          <p class="text-sm text-stone-600 mt-1">
+            @if (plant()) {
+              {{ plant()!.name }}
+            }
+          </p>
+        </div>
+        
+        <div class="flex items-center gap-3">
+          @if (!isEditMode()) {
+            <p-button 
+              label="Edit" 
+              icon="pi pi-pencil"
+              (onClick)="toggleEditMode()"
+              severity="warning">
+            </p-button>
+          }
+          <p-button 
+            label="Back to List" 
+            icon="pi pi-arrow-left"
+            (onClick)="goBack()"
+            severity="secondary"
+            [outlined]="true">
+          </p-button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    @if (loading()) {
+      <div class="flex justify-center items-center h-64">
+        <i class="pi pi-spin pi-spinner text-4xl text-burgundy-600"></i>
+      </div>
+    } @else if (plant()) {
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Plant Information -->
+        <p-card header="Plant Information">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-stone-700 mb-1">
+                Plant Name
+              </label>
+              @if (isEditMode()) {
+                <input 
+                  pInputText 
+                  type="text" 
+                  [(ngModel)]="plantName"
+                  class="w-full"
+                  placeholder="Enter plant name">
+              } @else {
+                <p class="text-lg font-semibold text-burgundy-900">{{ plant()!.name }}</p>
+              }
+            </div>
+
+            @if (plant()!.id) {
+              <div>
+                <label class="block text-sm font-medium text-stone-700 mb-1">
+                  Plant ID
+                </label>
+                <p class="text-stone-600">{{ plant()!.id }}</p>
+              </div>
+            }
+
+            @if (plant()!.created_at) {
+              <div>
+                <label class="block text-sm font-medium text-stone-700 mb-1">
+                  Created At
+                </label>
+                <p class="text-stone-600">{{ plant()!.created_at | date:'medium' }}</p>
+              </div>
+            }
+
+            @if (plant()!.updated_at) {
+              <div>
+                <label class="block text-sm font-medium text-stone-700 mb-1">
+                  Last Updated
+                </label>
+                <p class="text-stone-600">{{ plant()!.updated_at | date:'medium' }}</p>
+              </div>
+            }
+
+            @if (isEditMode()) {
+              <div class="flex gap-3 pt-4">
+                <p-button 
+                  label="Save Changes" 
+                  icon="pi pi-check"
+                  (onClick)="onUpdate()"
+                  severity="success"
+                  [style]="{'flex': '1'}">
+                </p-button>
+                <p-button 
+                  label="Cancel" 
+                  icon="pi pi-times"
+                  (onClick)="toggleEditMode()"
+                  severity="secondary"
+                  [outlined]="true"
+                  [style]="{'flex': '1'}">
+                </p-button>
+              </div>
+            }
+          </div>
+        </p-card>
+
+        <!-- Map -->
+        <p-card>
+          <ng-template pTemplate="header">
+            <div class="p-4">
+              <h3 class="text-lg font-semibold text-stone-900">
+                Plant Location
+              </h3>
+              @if (isEditMode()) {
+                <p class="text-sm text-stone-600 mt-1">
+                  Use the drawing tools to update the plant boundary
+                </p>
+              }
+            </div>
+          </ng-template>
+          <div id="map" class="h-[500px] w-full rounded-lg"></div>
+        </p-card>
+      </div>
+    } @else {
+      <p-card>
+        <div class="text-center py-12">
+          <i class="pi pi-exclamation-circle text-6xl text-stone-400 mb-4"></i>
+          <h3 class="text-xl font-semibold text-stone-700 mb-2">Plant not found</h3>
+          <p class="text-stone-500 mb-6">The requested plant could not be found</p>
+          <p-button 
+            label="Back to List" 
+            icon="pi pi-arrow-left"
+            (onClick)="goBack()">
+          </p-button>
+        </div>
+      </p-card>
+    }
+  </main>
+</div>
+
+<p-toast></p-toast>

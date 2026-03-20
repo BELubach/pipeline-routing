@@ -1,0 +1,37 @@
+/* PrimeNG specific overrides for proper integration with Tailwind */
+:host ::ng-deep .p-password {
+  width: 100%;
+}
+
+:host ::ng-deep .p-password input {
+  width: 100%;
+}
+
+:host ::ng-deep .p-input-icon-left > i {
+  left: 0.75rem;
+}
+
+/* Leaflet Map Styling */
+#map {
+  height: 400px;
+  z-index: 1;
+}
+
+:host ::ng-deep .leaflet-container {
+  font-family: inherit;
+}
+
+:host ::ng-deep .leaflet-draw-toolbar {
+  margin-top: 10px !important;
+}
+
+:host ::ng-deep .leaflet-draw-actions {
+  left: 26px !important;
+}
+
+:host ::ng-deep .leaflet-draw-tooltip {
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  border-radius: 4px;
+}
+

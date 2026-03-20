@@ -1,0 +1,94 @@
+<div class="min-h-screen bg-gradient-to-br from-sand-50 to-amber-50">
+  <!-- Header -->
+  <header class="bg-white shadow-sm border-b border-sand-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-2xl font-bold text-burgundy-900">Add New Plant</h1>
+          <p class="text-sm text-stone-600 mt-1">Create a new plant by defining its location</p>
+        </div>
+        
+        <p-button 
+          label="Back to Dashboard" 
+          icon="pi pi-arrow-left"
+          (onClick)="goBack()"
+          severity="secondary"
+          [outlined]="true">
+        </p-button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Plant Information -->
+      <p-card header="Plant Information">
+        <div class="space-y-4">
+          <div>
+            <label for="name" class="block text-sm font-medium text-stone-700 mb-2">
+              Plant Name <span class="text-red-500">*</span>
+            </label>
+            <span class="p-input-icon-left w-full">
+              <i class="pi pi-home text-stone-400"></i>
+              <input 
+                pInputText 
+                id="name" 
+                type="text" 
+                [(ngModel)]="name" 
+                placeholder="Enter plant name"
+                class="w-full"
+                [disabled]="loading()" />
+            </span>
+          </div>
+
+          @if (polygonCoordinates().length > 0) {
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div class="flex items-center gap-2 text-green-700">
+                <i class="pi pi-check-circle text-xl"></i>
+                <div>
+                  <p class="font-semibold">Area Defined</p>
+                  <p class="text-sm">Polygon with {{ polygonCoordinates()[0].length - 1 }} points</p>
+                </div>
+              </div>
+            </div>
+          }
+
+          <div class="pt-4">
+            <p-button 
+              label="Save Plant" 
+              icon="pi pi-save" 
+              (onClick)="onSave()" 
+              [loading]="loading()"
+              severity="success"
+              [style]="{'width': '100%'}"
+              size="large">
+            </p-button>
+          </div>
+        </div>
+      </p-card>
+
+      <!-- Map -->
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="p-4">
+            <h3 class="text-lg font-semibold text-stone-900">
+              Plant Location
+            </h3>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
+              <p class="text-xs text-blue-800 font-semibold mb-1">How to draw your polygon:</p>
+              <ul class="text-xs text-blue-700 space-y-1 ml-4 list-disc">
+                <li><strong>Step 1:</strong> Click the polygon tool (square icon) in the top-left</li>
+                <li><strong>Step 2:</strong> Single-click on the map to add each corner</li>
+                <li><strong>Step 3:</strong> To finish, click the first point or double-click the last</li>
+              </ul>
+            </div>
+          </div>
+        </ng-template>
+        <div id="map" class="h-[500px] w-full rounded-lg"></div>
+      </p-card>
+    </div>
+  </main>
+</div>
+
+<p-toast></p-toast>
