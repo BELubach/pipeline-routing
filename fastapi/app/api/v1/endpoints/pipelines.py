@@ -203,7 +203,7 @@ async def get_nearest_nodes(
     node_type: str | None = Query(None, description="Filter by node type"),
     db: AsyncSession = Depends(get_db),
 ):
-    """Return the 5 nearest pipeline nodes to a coordinate."""
+    """Return the 50 nearest pipeline nodes to a coordinate."""
     node_types = [node_type] if node_type else []
     result = await db.execute(
         text("""
