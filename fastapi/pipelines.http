@@ -2,10 +2,10 @@
 # Base URL: http://localhost:8000
 
 ### 1. Get cheapest route (composite cost)
-GET http://localhost:8000/api/v1/pipelines/route?start_lon=4.89&start_lat=52.37&end_lon=5.29&end_lat=52.13&cost_type=composite
+GET http://localhost:8000/api/v1/pipelines/route?start_lon=4.711&start_lat=52.3&end_lon=7.205&end_lat=53.2019&cost_type=composite
 
 ### 2. Get cheapest route (tariff-optimized)
-GET http://localhost:8000/api/v1/pipelines/route?start_lon=4.89&start_lat=52.37&end_lon=5.29&end_lat=52.13&cost_type=tariff
+GET http://localhost:8000/api/v1/pipelines/route?start_lon=4.711&start_lat=52.3&end_lon=7.205&end_lat=53.2019&cost_type=tariff
 
 ### 3. Get cheapest route (shortest distance)
 GET http://localhost:8000/api/v1/pipelines/route?start_lon=4.89&start_lat=52.37&end_lon=5.29&end_lat=52.13&cost_type=distance&max_snap_km=100
@@ -17,7 +17,7 @@ GET http://localhost:8000/api/v1/pipelines/route?start_lon=10.00&start_lat=53.55
 GET http://localhost:8000/api/v1/pipelines/nearest-nodes?lon=4.89&lat=52.37&max_km=20
 
 ### 6. Find nearest LNG terminals
-GET http://localhost:8000/api/v1/pipelines/nearest-nodes?lon=4.89&lat=52.37&max_km=500&node_type=lng_terminal
+GET http://localhost:8000/api/v1/pipelines/nearest-nodes?lon=5.29&lat=52.13&max_km=500&node_type=lng_terminal
 
 ### 7. Find nearest trading hubs
 GET http://localhost:8000/api/v1/pipelines/nearest-nodes?lon=13.40&lat=52.52&max_km=300&node_type=hub
