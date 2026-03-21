@@ -204,6 +204,8 @@ async def get_nearest_nodes(
     db: AsyncSession = Depends(get_db),
 ):
     """Return the 5 nearest pipeline nodes to a coordinate."""
+    node_types = [node_type] if node_type else []
+    print(f"Finding nearest nodes to ({lon}, {lat}) within {max_km}km, node_type={node_type}")
     result = await db.execute(
         text("""
             SELECT node_id, name, node_type, distance_km
@@ -215,7 +217,7 @@ async def get_nearest_nodes(
             "lon": lon,
             "lat": lat,
             "max_km": max_km,
-            "node_types": [node_type] if node_type else None
+            "node_types": node_types,
         }
     )
     rows = result.fetchall()

@@ -14,7 +14,7 @@ GET http://localhost:8000/api/v1/pipelines/route?start_lon=4.89&start_lat=52.37&
 GET http://localhost:8000/api/v1/pipelines/route?start_lon=10.00&start_lat=53.55&end_lon=2.35&end_lat=48.85&cost_type=composite
 
 ### 5. Find nearest nodes to Amsterdam
-GET http://localhost:8000/api/v1/pipelines/nearest-nodes?lon=4.89&lat=52.37&max_km=200&node_type=lng_terminal
+GET http://localhost:8000/api/v1/pipelines/nearest-nodes?lon=4.89&lat=52.37&max_km=20
 
 ### 6. Find nearest LNG terminals
 GET http://localhost:8000/api/v1/pipelines/nearest-nodes?lon=4.89&lat=52.37&max_km=500&node_type=lng_terminal

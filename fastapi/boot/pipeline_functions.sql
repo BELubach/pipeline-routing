@@ -137,9 +137,9 @@ RETURNS TABLE (
             ST_SetSRID(ST_Point(lon, lat), 4326)::geography,
             max_dist_km * 1000   -- metres
         )
-        AND (node_types IS NULL OR node_type = ANY(node_types))
+        AND (array_length(node_types, 1) IS NULL OR node_type = ANY(node_types))
     ORDER BY geom <-> ST_SetSRID(ST_Point(lon, lat), 4326)
-    LIMIT 5;
+    LIMIT 50;
 $$;
 
 -- =============================================================
