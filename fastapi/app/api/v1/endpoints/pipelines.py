@@ -47,7 +47,8 @@ class RouteResponse(BaseModel):
     total_km: float | None
     cost_type: str
     segments: list[RouteSegment]
-    route_geojson: dict = Field(description="Full route as GeoJSON FeatureCollection")
+    route_geojson: dict = Field(
+        description="Full route as GeoJSON FeatureCollection")
 
 
 class NearestNode(BaseModel):
@@ -148,8 +149,10 @@ async def get_cheapest_route(
             node_name=row.node_name,
             edge_id=row.edge_id,
             pipeline_name=row.pipeline_name,
-            segment_cost_eur_mwh=float(row.segment_cost) if row.segment_cost else None,
-            cumulative_cost_eur_mwh=float(row.cumulative_cost) if row.cumulative_cost else None,
+            segment_cost_eur_mwh=float(
+                row.segment_cost) if row.segment_cost else None,
+            cumulative_cost_eur_mwh=float(
+                row.cumulative_cost) if row.cumulative_cost else None,
             segment_km=float(row.segment_km) if row.segment_km else None,
             geometry=row.geometry,
         )
@@ -170,7 +173,7 @@ async def get_cheapest_route(
 
     last = rows[-1]
     total_cost = float(last.cumulative_cost) if last.cumulative_cost else None
-    total_km   = sum(float(s.segment_km) for s in segments if s.segment_km)
+    total_km = sum(float(s.segment_km) for s in segments if s.segment_km)
 
     return RouteResponse(
         source_lon=start_lon,
@@ -205,13 +208,15 @@ async def get_nearest_nodes(
         text("""
             SELECT node_id, name, node_type, distance_km
             FROM nearest_node(
-                :lon, :lat, :max_km,
-                CASE WHEN :node_type IS NOT NULL
-                     THEN ARRAY[:node_type]::text[]
-                     ELSE NULL END
+                :lon, :lat, :max_km, :node_types
             )
         """),
-        {"lon": lon, "lat": lat, "max_km": max_km, "node_type": node_type}
+        {
+            "lon": lon,
+            "lat": lat,
+            "max_km": max_km,
+            "node_types": [node_type] if node_type else None
+        }
     )
     rows = result.fetchall()
     return [
@@ -224,7 +229,8 @@ async def get_nearest_nodes(
 @router.get("/nodes", response_model=list[PipelineNode])
 async def get_nodes(
     node_type: str | None = Query(None),
-    country: str | None = Query(None, description="ISO 3166-1 alpha-2 country code"),
+    country: str | None = Query(
+        None, description="ISO 3166-1 alpha-2 country code"),
     hubs_only: bool = Query(False),
     db: AsyncSession = Depends(get_db),
 ):
@@ -239,9 +245,9 @@ async def get_nodes(
                 ST_Y(geom) AS lat
             FROM pipeline_nodes
             WHERE status = 'operating'
-              AND (:node_type IS NULL OR node_type = :node_type)
-              AND (:country IS NULL OR country = :country)
-              AND (:hubs_only = FALSE OR is_trading_hub = TRUE)
+              AND (CAST(:node_type AS text) IS NULL OR node_type = CAST(:node_type AS text))
+              AND (CAST(:country AS text) IS NULL OR country = CAST(:country AS text))
+              AND (CAST(:hubs_only AS boolean) = FALSE OR is_trading_hub = TRUE)
             ORDER BY name
             LIMIT 500
         """),
@@ -252,7 +258,8 @@ async def get_nodes(
         PipelineNode(
             id=r.id, name=r.name, node_type=r.node_type, country=r.country,
             is_trading_hub=r.is_trading_hub, hub_code=r.hub_code,
-            lng_capacity_bcm=float(r.lng_capacity_bcm) if r.lng_capacity_bcm else None,
+            lng_capacity_bcm=float(
+                r.lng_capacity_bcm) if r.lng_capacity_bcm else None,
             lng_type=r.lng_type,
             lon=float(r.lon), lat=float(r.lat),
         )
@@ -263,7 +270,8 @@ async def get_nodes(
 @router.get("/nodes/{node_id}/reachable")
 async def get_reachable_from_node(
     node_id: int,
-    max_cost: float = Query(10.0, description="Max cost in €/MWh to consider reachable"),
+    max_cost: float = Query(
+        10.0, description="Max cost in €/MWh to consider reachable"),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -281,8 +289,8 @@ async def get_reachable_from_node(
                         reverse_cost_composite AS reverse_cost
                  FROM pipeline_edges
                  WHERE status IN (''operating'', ''construction'')',
-                :node_id,
-                :max_cost,
+                CAST(:node_id AS BIGINT),
+                CAST(:max_cost AS FLOAT),
                 directed := true
             ) dd
             JOIN pipeline_nodes n ON n.id = dd.node
