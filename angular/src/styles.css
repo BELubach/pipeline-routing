@@ -1,5 +1,6 @@
 
 @import "primeicons/primeicons.css";
+@import "leaflet/dist/leaflet.css";
 
 /* Tailwind CSS v4 */
 @import "tailwindcss";

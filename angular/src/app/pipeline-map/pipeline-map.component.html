@@ -1,0 +1,33 @@
+<div class="map-container">
+  <div class="header">
+    <h1>Pipeline Network Map</h1>
+    <div class="legend">
+      <div class="legend-item">
+        <span class="legend-circle" style="background-color: #3498db;"></span>
+        <span>Border Crossing</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-circle" style="background-color: #e74c3c;"></span>
+        <span>LNG Terminal</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-circle" style="background-color: #95a5a6;"></span>
+        <span>Other</span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="loading" *ngIf="loading">
+    <p>Loading pipeline nodes...</p>
+  </div>
+  
+  <div class="error" *ngIf="error">
+    <p>{{ error }}</p>
+  </div>
+  
+  <div id="map"></div>
+  
+  <div class="stats">
+    <p>Total nodes: {{ nodes.length }}</p>
+  </div>
+</div>

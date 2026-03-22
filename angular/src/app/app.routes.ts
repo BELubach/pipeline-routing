@@ -26,6 +26,10 @@ export const routes: Routes = [
     loadComponent: () => import('./plants/plant-detail.component').then(m => m.PlantDetailComponent)
   },
   {
+    path: 'pipeline-map',
+    loadComponent: () => import('./pipeline-map/pipeline-map.component').then(m => m.PipelineMapComponent)
+  },
+  {
     path: '',
     redirectTo: '/dashboard',
     pathMatch: 'full'

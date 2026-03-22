@@ -10,6 +10,11 @@ const refreshTokenSubject = new BehaviorSubject<string | null>(null);
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   
+  // Skip auth for specific endpoints
+  if (req.url.includes('/pipelines/nodes')) {
+    return next(req);
+  }
+  
   // Add access token to requests
   const accessToken = authService.getAccessToken();
   if (accessToken) {
