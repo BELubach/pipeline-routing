@@ -162,6 +162,112 @@
   color: #333;
 }
 
+:host ::ng-deep .node-popup hr {
+  margin: 0.75rem 0;
+  border: none;
+  border-top: 1px solid #dee2e6;
+}
+
+:host ::ng-deep .reachable-section {
+  margin-top: 0.5rem;
+}
+
+:host ::ng-deep .reachable-section h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+:host ::ng-deep .reachable-section label {
+  display: block;
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 0.25rem;
+}
+
+:host ::ng-deep .reachable-section input[type="number"] {
+  width: 100%;
+  padding: 0.4rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+:host ::ng-deep .reachable-section button {
+  padding: 0.4rem 0.8rem;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background-color 0.2s;
+}
+
+:host ::ng-deep .reachable-section button:hover {
+  background-color: #2980b9;
+}
+
+:host ::ng-deep .reachable-section button:last-of-type {
+  background-color: #95a5a6;
+}
+
+:host ::ng-deep .reachable-section button:last-of-type:hover {
+  background-color: #7f8c8d;
+}
+
+:host ::ng-deep .reachable-result {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+
+:host ::ng-deep .loading-text {
+  color: #3498db;
+  font-style: italic;
+}
+
+:host ::ng-deep .success-text {
+  color: #27ae60;
+  font-weight: 600;
+}
+
+:host ::ng-deep .error-text {
+  color: #e74c3c;
+}
+
+:host ::ng-deep .path-popup,
+:host ::ng-deep .reachable-node-popup,
+:host ::ng-deep .source-node-popup {
+  font-size: 0.85rem;
+}
+
+:host ::ng-deep .path-popup h4,
+:host ::ng-deep .reachable-node-popup h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+:host ::ng-deep .path-popup p,
+:host ::ng-deep .reachable-node-popup p {
+  margin: 0.25rem 0;
+  color: #666;
+}
+
+:host ::ng-deep .source-node-popup {
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+:host ::ng-deep .leaflet-popup-content-wrapper {
+  border-radius: 8px;
+}
+
+:host ::ng-deep .node-popup strong {
+  color: #333;
+}
+
 :host ::ng-deep .leaflet-popup-content-wrapper {
   border-radius: 8px;
 }

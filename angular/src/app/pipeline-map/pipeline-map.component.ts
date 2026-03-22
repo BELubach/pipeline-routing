@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import * as L from 'leaflet';
 import { PipelineService } from '../services/pipeline.service';
-import { PipelineNode } from '../models/pipeline-node.model';
+import { PipelineNode, ReachableNode } from '../models/pipeline-node.model';
 
 interface NodeTypeFilter {
   type: string;
@@ -23,6 +23,7 @@ interface NodeTypeFilter {
 export class PipelineMapComponent implements OnInit, OnDestroy {
   private map: L.Map | null = null;
   private markersLayer: L.LayerGroup = L.layerGroup();
+  private reachableLayer: L.LayerGroup = L.layerGroup();
   private isInitialLoad = true;
   nodes: PipelineNode[] = [];
   nodeTypes: NodeTypeFilter[] = [];
@@ -59,7 +60,8 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
       attribution: '© OpenStreetMap contributors'
     }).addTo(this.map);
     
-    // Add markers layer
+    // Add layers
+    this.reachableLayer.addTo(this.map);
     this.markersLayer.addTo(this.map);
   }
 
@@ -167,19 +169,15 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
           fillOpacity: 0.8
         }).addTo(this.markersLayer);
 
-        // Create popup content
-        const popupContent = `
-          <div class="node-popup">
-            <h3>${node.name}</h3>
-            <p><strong>Type:</strong> ${node.node_type.replace('_', ' ')}</p>
-            <p><strong>Country:</strong> ${node.country}</p>
-            ${node.lng_capacity_bcm ? `<p><strong>LNG Capacity:</strong> ${node.lng_capacity_bcm} BCM</p>` : ''}
-            ${node.lng_type ? `<p><strong>LNG Type:</strong> ${node.lng_type}</p>` : ''}
-            ${node.is_trading_hub ? '<p><strong>Trading Hub</strong></p>' : ''}
-          </div>
-        `;
-
-        marker.bindPopup(popupContent);
+        // Create interactive popup with reachable nodes feature
+        const popupContent = this.createNodePopup(node);
+        const popup = L.popup({ minWidth: 250 }).setContent(popupContent);
+        marker.bindPopup(popup);
+        
+        // Setup event listener after popup opens
+        marker.on('popupopen', () => {
+          this.setupPopupInteraction(node);
+        });
       });
 
       // Fit map to show all markers only on initial load
@@ -193,5 +191,135 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error('Error adding markers to map:', error);
     }
+  }
+
+  private createNodePopup(node: PipelineNode): HTMLElement {
+    const container = document.createElement('div');
+    container.className = 'node-popup';
+    container.innerHTML = `
+      <h3>${node.name}</h3>
+      <p><strong>Type:</strong> ${node.node_type.replace(/_/g, ' ')}</p>
+      <p><strong>Country:</strong> ${node.country || 'N/A'}</p>
+      ${node.lng_capacity_bcm ? `<p><strong>LNG Capacity:</strong> ${node.lng_capacity_bcm} BCM</p>` : ''}
+      ${node.lng_type ? `<p><strong>LNG Type:</strong> ${node.lng_type}</p>` : ''}
+      ${node.is_trading_hub ? '<p><strong>Trading Hub</strong></p>' : ''}
+      <hr>
+      <div class="reachable-section">
+        <h4>Find Reachable Nodes</h4>
+        <label for="maxCost-${node.id}">Max Cost (EUR/MWh):</label>
+        <input type="number" id="maxCost-${node.id}" value="1000" step="100" min="0">
+        <button id="findReachable-${node.id}">Find Reachable</button>
+        <button id="clearReachable-${node.id}" style="margin-left: 5px;">Clear</button>
+        <div id="reachableResult-${node.id}" class="reachable-result"></div>
+      </div>
+    `;
+    return container;
+  }
+
+  private setupPopupInteraction(node: PipelineNode): void {
+    const findButton = document.getElementById(`findReachable-${node.id}`);
+    const clearButton = document.getElementById(`clearReachable-${node.id}`);
+    const maxCostInput = document.getElementById(`maxCost-${node.id}`) as HTMLInputElement;
+    const resultDiv = document.getElementById(`reachableResult-${node.id}`);
+
+    if (findButton && maxCostInput && resultDiv) {
+      findButton.addEventListener('click', () => {
+        const maxCost = parseFloat(maxCostInput.value);
+        if (maxCost > 0) {
+          this.findReachableNodes(node, maxCost, resultDiv);
+        }
+      });
+    }
+
+    if (clearButton) {
+      clearButton.addEventListener('click', () => {
+        this.clearReachableNodes();
+        if (resultDiv) {
+          resultDiv.innerHTML = '';
+        }
+      });
+    }
+  }
+
+  private findReachableNodes(sourceNode: PipelineNode, maxCost: number, resultDiv: HTMLElement): void {
+    resultDiv.innerHTML = '<p class="loading-text">Loading...</p>';
+    
+    this.pipelineService.getReachableNodes(sourceNode.id, maxCost).subscribe({
+      next: (response) => {
+        this.visualizeReachableNodes(sourceNode, response.nodes);
+        resultDiv.innerHTML = `
+          <p class="success-text">Found ${response.reachable_count} reachable nodes</p>
+        `;
+      },
+      error: (err) => {
+        console.error('Error fetching reachable nodes:', err);
+        resultDiv.innerHTML = `<p class="error-text">Error: ${err.message || 'Failed to load'}</p>`;
+      }
+    });
+  }
+
+  private visualizeReachableNodes(sourceNode: PipelineNode, reachableNodes: ReachableNode[]): void {
+    // Clear previous visualization
+    this.reachableLayer.clearLayers();
+
+    if (!this.map) return;
+
+    // Draw lines from source to each reachable node
+    reachableNodes.forEach(targetNode => {
+      const line = L.polyline(
+        [[sourceNode.lat, sourceNode.lon], [targetNode.lat, targetNode.lon]],
+        {
+          color: '#2ecc71',
+          weight: 2,
+          opacity: 0.6,
+          dashArray: '5, 5'
+        }
+      ).addTo(this.reachableLayer);
+
+      // Add popup to line showing cost
+      line.bindPopup(`
+        <div class="path-popup">
+          <p><strong>From:</strong> ${sourceNode.name}</p>
+          <p><strong>To:</strong> ${targetNode.name}</p>
+          <p><strong>Cost:</strong> ${targetNode.cost_eur_mwh.toFixed(4)} EUR/MWh</p>
+        </div>
+      `);
+    });
+
+    // Add markers for reachable nodes
+    reachableNodes.forEach(node => {
+      const marker = L.circleMarker([node.lat, node.lon], {
+        radius: 6,
+        fillColor: '#2ecc71',
+        color: '#fff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.8
+      }).addTo(this.reachableLayer);
+
+      marker.bindPopup(`
+        <div class="reachable-node-popup">
+          <h4>${node.name}</h4>
+          <p><strong>Type:</strong> ${node.node_type.replace(/_/g, ' ')}</p>
+          <p><strong>Cost:</strong> ${node.cost_eur_mwh.toFixed(4)} EUR/MWh</p>
+        </div>
+      `);
+    });
+
+    // Highlight source node
+    const sourceMarker = L.circleMarker([sourceNode.lat, sourceNode.lon], {
+      radius: 10,
+      fillColor: '#e74c3c',
+      color: '#fff',
+      weight: 3,
+      opacity: 1,
+      fillOpacity: 0.9
+    }).addTo(this.reachableLayer);
+    
+    sourceMarker.bindPopup(`<div class="source-node-popup"><strong>Source Node</strong></div>`);
+  }
+
+  private clearReachableNodes(): void {
+    this.reachableLayer.clearLayers();
   }
 }
