@@ -1,19 +1,32 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import * as L from 'leaflet';
 import { PipelineService } from '../services/pipeline.service';
 import { PipelineNode } from '../models/pipeline-node.model';
 
+interface NodeTypeFilter {
+  type: string;
+  label: string;
+  color: string;
+  selected: boolean;
+  count: number;
+}
+
 @Component({
   selector: 'app-pipeline-map',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './pipeline-map.component.html',
   styleUrls: ['./pipeline-map.component.css']
 })
 export class PipelineMapComponent implements OnInit, OnDestroy {
   private map: L.Map | null = null;
+  private markersLayer: L.LayerGroup = L.layerGroup();
+  private isInitialLoad = true;
   nodes: PipelineNode[] = [];
+  nodeTypes: NodeTypeFilter[] = [];
+  displayedNodesCount = 0;
   loading = true;
   error: string | null = null;
 
@@ -46,20 +59,18 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
       attribution: '© OpenStreetMap contributors'
     }).addTo(this.map);
     
-    console.log('Map initialized:', this.map);
+    // Add markers layer
+    this.markersLayer.addTo(this.map);
   }
 
   private loadNodes(): void {
-    console.log('Loading pipeline nodes...');
     this.pipelineService.getNodes().subscribe({
       next: (nodes) => {
-        console.log('Received nodes:', nodes);
-        console.log('Nodes length:', nodes?.length);
-        console.log('Map exists:', !!this.map);
         this.nodes = nodes;
+        this.extractNodeTypes(nodes);
         this.loading = false;
         this.cdr.detectChanges();
-        this.addMarkersToMap(nodes);
+        this.addMarkersToMap(nodes, true);
       },
       error: (err) => {
         console.error('Error loading nodes:', err);
@@ -73,45 +84,88 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
     });
   }
 
-  private addMarkersToMap(nodes: PipelineNode[]): void {
+  private extractNodeTypes(nodes: PipelineNode[]): void {
+    const typeMap = new Map<string, number>();
+    
+    nodes.forEach(node => {
+      const count = typeMap.get(node.node_type) || 0;
+      typeMap.set(node.node_type, count + 1);
+    });
+
+    this.nodeTypes = Array.from(typeMap.entries()).map(([type, count]) => ({
+      type,
+      label: this.formatNodeType(type),
+      color: this.getNodeColor(type),
+      selected: true,
+      count
+    }));
+  }
+
+  private formatNodeType(type: string): string {
+    return type.split('_').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+  }
+
+  private getNodeColor(nodeType: string): string {
+    switch (nodeType) {
+      case 'border_crossing':
+        return '#3498db'; // Blue
+      case 'lng_terminal':
+        return '#e74c3c'; // Red
+      default:
+        return '#95a5a6'; // Gray
+    }
+  }
+
+  onTypeToggle(nodeType: NodeTypeFilter): void {
+    this.updateMarkersDisplay();
+  }
+
+  private updateMarkersDisplay(): void {
+    this.markersLayer.clearLayers();
+    this.addMarkersToMap(this.nodes, false);
+  }
+
+  private addMarkersToMap(nodes: PipelineNode[], fitBounds: boolean = false): void {
     try {
-      console.log('Adding markers to map. Nodes:', nodes?.length, 'Map:', !!this.map);
       
       if (!this.map) {
         console.error('Map not initialized!');
         return;
       }
 
+      // Clear existing markers
+      this.markersLayer.clearLayers();
+
+      // Get selected types
+      const selectedTypes = new Set(this.nodeTypes.filter(t => t.selected).map(t => t.type));
+      
+      // If no types selected yet (on initial load), show all
+      const shouldFilterByType = this.nodeTypes.length > 0;
+
+      // Filter nodes by selected types
+      const filteredNodes = shouldFilterByType 
+        ? nodes.filter(node => selectedTypes.has(node.node_type))
+        : nodes;
+
       // Remove duplicates based on coordinates
-      const uniqueNodes = nodes.filter((node, index, self) =>
+      const uniqueNodes = filteredNodes.filter((node, index, self) =>
         index === self.findIndex((n) => n.lat === node.lat && n.lon === node.lon)
       );
       
       console.log('Unique nodes:', uniqueNodes.length);
-
-      // Color mapping for different node types
-      const getNodeColor = (nodeType: string): string => {
-        switch (nodeType) {
-          case 'border_crossing':
-            return '#3498db'; // Blue
-          case 'lng_terminal':
-            return '#e74c3c'; // Red
-          default:
-            return '#95a5a6'; // Gray
-        }
-      };
+      this.displayedNodesCount = uniqueNodes.length;
 
       uniqueNodes.forEach((node, index) => {
-        console.log(`Adding marker ${index + 1}:`, node.name, node.lat, node.lon);
-        
         const marker = L.circleMarker([node.lat, node.lon], {
           radius: 8,
-          fillColor: getNodeColor(node.node_type),
+          fillColor: this.getNodeColor(node.node_type),
           color: '#fff',
           weight: 2,
           opacity: 1,
           fillOpacity: 0.8
-        }).addTo(this.map!);
+        }).addTo(this.markersLayer);
 
         // Create popup content
         const popupContent = `
@@ -128,8 +182,8 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
         marker.bindPopup(popupContent);
       });
 
-      // Fit map to show all markers
-      if (uniqueNodes.length > 0) {
+      // Fit map to show all markers only on initial load
+      if (fitBounds && uniqueNodes.length > 0) {
         const bounds = L.latLngBounds(uniqueNodes.map(node => [node.lat, node.lon]));
         this.map.fitBounds(bounds, { padding: [50, 50] });
         console.log('Map bounds set to:', bounds);

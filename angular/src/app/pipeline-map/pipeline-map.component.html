@@ -1,18 +1,20 @@
 <div class="map-container">
   <div class="header">
     <h1>Pipeline Network Map</h1>
-    <div class="legend">
-      <div class="legend-item">
-        <span class="legend-circle" style="background-color: #3498db;"></span>
-        <span>Border Crossing</span>
-      </div>
-      <div class="legend-item">
-        <span class="legend-circle" style="background-color: #e74c3c;"></span>
-        <span>LNG Terminal</span>
-      </div>
-      <div class="legend-item">
-        <span class="legend-circle" style="background-color: #95a5a6;"></span>
-        <span>Other</span>
+    <div class="filters">
+      <h3>Filter by Type:</h3>
+      <div class="type-filters">
+        <div class="filter-item" *ngFor="let nodeType of nodeTypes">
+          <label>
+            <input 
+              type="checkbox" 
+              [(ngModel)]="nodeType.selected"
+              (change)="onTypeToggle(nodeType)"
+            />
+            <span class="legend-circle" [style.background-color]="nodeType.color"></span>
+            <span class="filter-label">{{ nodeType.label }} ({{ nodeType.count }})</span>
+          </label>
+        </div>
       </div>
     </div>
   </div>
@@ -28,6 +30,6 @@
   <div id="map"></div>
   
   <div class="stats">
-    <p>Total nodes: {{ nodes.length }}</p>
+    <p>Displaying {{ displayedNodesCount }} of {{ nodes.length }} nodes</p>
   </div>
 </div>
