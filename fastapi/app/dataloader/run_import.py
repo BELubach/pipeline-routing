@@ -12,7 +12,6 @@ from pathlib import Path
 from app.db.session import SessionLocal
 from app.dataloader.pipeline_batch_loader import PipelineBatchLoader, get_import_status
 
-# Set up logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -51,7 +50,7 @@ def main():
         logger.error(f"File not found: {filepath}")
         return 1
     
-    # Create database session
+
     db = SessionLocal()
 
     try:

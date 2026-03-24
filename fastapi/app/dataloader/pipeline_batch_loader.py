@@ -9,7 +9,7 @@ from pathlib import Path
 
 import geopandas as gpd
 import pandas as pd
-from shapely.geometry import LineString, MultiLineString
+from shapely.geometry import LineString
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from geoalchemy2.shape import from_shape

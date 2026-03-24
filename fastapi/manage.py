@@ -14,7 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 def import_pipelines(args):
     """Import GEM pipeline data into the database"""
-    from boot.import_gem_pipelines import main as import_main, import_geojson, import_known_nodes
+    from boot.db_setup.import_gem_pipelines import main as import_main, import_geojson, import_known_nodes
     import psycopg2
     from app.core.config import settings
     
@@ -163,11 +163,7 @@ def main():
         default='./data/GEM-GGIT-Gas-Pipelines-2025-11.geojson',
         help='Path to GEM pipeline GeoJSON file (default: ./data/GEM-GGIT-Gas-Pipelines-2025-11.geojson)'
     )
-    import_parser.add_argument(
-        '--seed-nodes-only',
-        action='store_true',
-        help='Only seed known nodes, skip GeoJSON import'
-    )
+
     import_parser.add_argument(
         '--global-scope',
         action='store_true',

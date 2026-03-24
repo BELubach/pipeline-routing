@@ -153,7 +153,7 @@ The `manage.py` script provides several utilities:
 
 ```bash
 # Import pipeline data
-python manage.py import-pipelines [--geojson PATH] [--seed-nodes-only] [--global-scope]
+python manage.py import-pipelines [--geojson PATH] [--global-scope]
 
 # Create admin user
 python manage.py create-admin --email admin@example.com --password secret --name "Admin User"

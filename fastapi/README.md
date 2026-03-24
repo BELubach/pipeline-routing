@@ -32,7 +32,7 @@ uvicorn app.main:app --reload
 # API Docs: http://localhost:8000/api/v1/docs
 ```
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 fastapi/
@@ -256,7 +256,7 @@ This creates:
 #### Seed Known Nodes Only (Quick Start)
 
 ```bash
-python manage.py import-pipelines --seed-nodes-only
+python manage.py import-pipelines
 ```
 
 This imports ~50 well-known hubs, LNG terminals, and border crossings.

@@ -34,7 +34,6 @@ from app.dataloader.pipeline_batch_loader import PipelineBatchLoader, get_import
 
 db = SessionLocal()
 try:
-    # Start import
     loader = PipelineBatchLoader(db)
     job = loader.load_file(
         geojson_path="./data/GEM-GGIT-Gas-Pipelines-2025-11.geojson",
@@ -45,7 +44,6 @@ try:
     print(f"Job {job.id}: {job.status}")
     print(f"Success: {job.successful_segments}/{job.total_segments}")
     
-    # Get detailed status
     status = get_import_status(db, job.id)
     print(status)
 finally:
