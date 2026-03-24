@@ -1,10 +1,24 @@
 # Boot Scripts - Pipeline Infrastructure Setup
-
 This folder contains initialization scripts to set up the gas pipeline infrastructure.
 
-## Required Setup Steps (Run Once)
 
-After running `alembic upgrade head`, execute these in order:
+---
+
+## Files in this Folder
+
+| File | Purpose | Run When |
+|------|---------|----------|
+| `/db_setup/pipeline_functions.sql` | Creates DB functions, views, and seed data | After Alembic migration |
+| `/db_setup/import_gem_pipelines.py` | Imports GEM pipeline GeoJSON data | After functions are created |
+| `/db_checks/check_pipeline_data.py` | Node/edge counts, cost status, nearest node checks | After data import |
+| `/db_checks/check_edge_connectivity.py` | Self-loop, edge validity, connectivity checks | After data import |
+| `/db_checks/detailed_routing_debug.py` | Step-by-step routing diagnosis, network checks | After data import (optional) |
+| `/db_checks/find_working_route.py` | Finds connected nodes for routing tests | After data import (optional) |
+| `/db_checks/debug_routing.sql` | Raw SQL diagnostic queries | After data import (optional) |
+| `/db_checks/smoke_queries.sql` | Test queries to verify setup | After data import (recommended) |
+
+---
+
 
 ### 1. Create Database Functions & Views 
 
@@ -18,7 +32,6 @@ python manage.py run-sql boot/pipeline_functions.sql
 - Seeds tariff rules with ENTSOG reference data
 - Enables PostGIS and pgRouting extensions
 
-**Required:** Yes, before importing data
 
 ---
 
@@ -26,7 +39,7 @@ python manage.py run-sql boot/pipeline_functions.sql
 
 **Option A - Quick Start (Recommended):**
 ```bash
-python manage.py import-pipelines --seed-nodes-only
+python manage.py import-pipelines
 ```
 
 Seeds ~50 well-known hubs, LNG terminals, and border crossings.
@@ -38,9 +51,6 @@ Seeds ~50 well-known hubs, LNG terminals, and border crossings.
    ```bash
   python manage.py import-pipelines --geojson ./data/GEM-GGIT-Gas-Pipelines-2025-11.geojson --global-scope
    ```
-
-**Required:** Yes, to have data to route through
-
 ---
 
 ### 3. Verify Setup 
@@ -58,29 +68,19 @@ python manage.py run-sql boot/smoke_queries.sql
 
 **Required:** No, but recommended to confirm everything works
 
----
 
-## Files in this Folder
-
-| File | Purpose | Run When |
-|------|---------|----------|
-| `pipeline_functions.sql` | Creates DB functions, views, and seed data | After Alembic migration |
-| `import_gem_pipelines.py` | Imports GEM pipeline GeoJSON data | After functions are created |
-| `smoke_queries.sql` | Test queries to verify setup | After data import (optional) |
-
----
 
 ## Common Issues
 
 **"Extension postgis does not exist"**
 - Make sure you're using the pgrouting Docker image
-- Check `docker-compose.yml` uses: `pgrouting/pgrouting:16-3.6-3.6.2`
+- Check `docker-compose.yml` uses: `pgrouting/pgrouting:16-3.5-4.0`
 
 **"Function nearest_node does not exist"**
 - Run `python manage.py run-sql boot/pipeline_functions.sql`
 
 **"No pipeline nodes found"**
-- Run `python manage.py import-pipelines --seed-nodes-only`
+- Run `python manage.py import-pipelines`
 
 **"ModuleNotFoundError: No module named 'psycopg2'"**
 - Install dependencies: `pip install -r requirements.txt`
