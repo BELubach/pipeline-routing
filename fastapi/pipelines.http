@@ -41,4 +41,4 @@ GET http://localhost:8000/api/v1/pipelines/nodes?node_type=lng_terminal
 GET http://localhost:8000/api/v1/pipelines/nodes/1/reachable?max_cost=500.0
 
 ### 14. Get reachable nodes from a specific node (wider budget)
-GET http://localhost:8000/api/v1/pipelines/nodes/6679/reachable?max_cost=1000.0
+GET http://localhost:8000/api/v1/pipelines/nodes/20590/reachable?max_cost=10.0
