@@ -1,9 +1,7 @@
 
 
-import pandas as pd
 from datetime import datetime
 from sqlalchemy.orm import Session
-from app.dataimport.value_parser import ValueParser
 from app.models.pipeline_import import PipelineImportChunk, PipelineImportSegment
 
 class ChunkProcessor:
@@ -46,6 +44,11 @@ class ChunkProcessor:
             chunk.error_message = f"{failed_count} segment(s) failed in chunk {chunk.chunk_index}"
         chunk.processed_at = datetime.utcnow()
         self.db.commit()
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(
+            f"Chunk {chunk.chunk_index} completed with status '{chunk.status}'. Failed segments: {failed_count}. Job ID: {chunk.job_id}"
+        )
 
     def segment_already_processed(self, job_id: int, segment_idx: int) -> bool:
         return bool(
@@ -57,36 +60,28 @@ class ChunkProcessor:
         )
 
     def record_segment_success(
-        self,
-        job_id: int,
-        idx: int,
-        row: pd.Series,
-        edge_id: int,
-        source_id: int,
-        target_id: int,
+        self, job_id: int, idx: int, parsed: dict, edge_id: int, source_id: int, target_id: int
     ) -> None:
-        seg = self._make_segment(job_id, idx, row, status="success")
+        seg = self._make_segment(job_id, idx, parsed, status="success")
         seg.edge_id = edge_id
         seg.source_node_id = source_id
         seg.target_node_id = target_id
         self.db.add(seg)
 
     def record_segment_failure(
-        self, job_id: int, idx: int, row: pd.Series, error: Exception
+        self, job_id: int, idx: int, parsed: dict, error: Exception
     ) -> None:
-        seg = self._make_segment(job_id, idx, row, status="failed")
+        seg = self._make_segment(job_id, idx, parsed, status="failed")
         seg.error_message = str(error)[:1000]
         self.db.add(seg)
 
     def _make_segment(
-        self, job_id: int, idx: int, row: pd.Series, status: str
+        self, job_id: int, idx: int, parsed: dict, status: str
     ) -> PipelineImportSegment:
-        c = ValueParser
         return PipelineImportSegment(
             job_id=job_id,
-            gem_id=c.safe_str(row.get("GEM Unit ID")),
-            pipeline_name=c.safe_str(row.get("Pipeline Name")),
+            gem_id=parsed.get("gem_id"),
+            pipeline_name=parsed.get("pipeline_name"),
             segment_index=int(idx),
             status=status,
         )
-

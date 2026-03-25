@@ -13,7 +13,6 @@ from app.batchdataloader.job_manager import JobManager
 from app.batchdataloader.chunk_processor import ChunkProcessor
 from app.dataimport.gem.segment_mapper import SegmentMapper
 from app.dataimport.gem.parser import GemPipelineParser
-from app.dataimport.config import EUROPE_COUNTRIES
 from app.models.pipeline_import import PipelineImportJob
 
 logger = logging.getLogger(__name__)
@@ -24,7 +23,6 @@ class PipelineBatchLoader:
     tracking progress and supporting resume via Job/Chunk DB records.
     """
 
-    EUROPE_BBOX = (-30, 20, 60, 75)
 
     def __init__(self, db: Session):
         self.db = db
@@ -37,17 +35,17 @@ class PipelineBatchLoader:
         self,
         geojson_path: str,
         batch_size: int = 100,
-        europe_only: bool = True,
         existing_job: PipelineImportJob | None = None,
     ) -> PipelineImportJob:
         filepath = Path(geojson_path)
+        logger.info(f"Starting import job for file: {filepath}")
         if not filepath.exists():
             raise FileNotFoundError(f"GeoJSON file not found: {geojson_path}")
 
         job = self._jobs.create_or_resume(filepath.name, existing_job)
 
         try:
-            gdf = self._load_geodataframe(geojson_path, europe_only)
+            gdf = self._load_geodataframe(geojson_path)
             self._jobs.update_totals(job, len(gdf), len(gdf))
             self._run_job(job, gdf, batch_size)
         except Exception as exc:
@@ -59,24 +57,16 @@ class PipelineBatchLoader:
 
     # ── private ───────────────────────────────────────────────────────────────
 
-    def _load_geodataframe(self, path: str, europe_only: bool) -> gpd.GeoDataFrame:
+    def _load_geodataframe(self, path: str) -> gpd.GeoDataFrame:
         logger.info("Reading GeoJSON file…")
         gdf = gpd.read_file(path).to_crs(epsg=4326)
         gdf = gdf.explode(index_parts=False).reset_index(drop=True)
         gdf = gdf[gdf.geometry.geom_type == "LineString"].copy()
-
-        if europe_only:
-            # Bbox pre-filter for performance, then precise country filter
-            lon0, lat0, lon1, lat1 = self.EUROPE_BBOX
-            gdf = gdf.cx[lon0:lon1, lat0:lat1]
-            gdf = self._filter_by_country(gdf)
-            logger.info(f"Filtered to Europe scope: {len(gdf)} segments")
-
+        logger.info(f"Loaded {len(gdf)} segments from GeoJSON ")
         return gdf
 
     def _filter_by_country(self, gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
         """
-        Keep rows where at least one parsed country code is in EUROPE_COUNTRIES.
         Rows with no country data are kept (avoids silently dropping valid data).
         """
         def row_in_scope(row) -> bool:
@@ -130,11 +120,12 @@ class PipelineBatchLoader:
 
     def _process_segment(self, job_id, idx, row):
         try:
-            edge_id, source_id, target_id = self._mapper.map_row(row, row.geometry)
-            self._chunks.record_segment_success(job_id, idx, row, edge_id, source_id, target_id)
+            parsed = self._parser.parse_row(row)
+            edge_id, source_id, target_id = self._mapper.map_parsed(parsed, row.geometry)
+            self._chunks.record_segment_success(job_id, idx, parsed, edge_id, source_id, target_id)
             return 1, 0
         except Exception as exc:
             logger.error(f"Segment {idx} failed: {exc}")
             self.db.rollback()
-            self._chunks.record_segment_failure(job_id, idx, row, exc)
+            self._chunks.record_segment_failure(job_id, idx, parsed, exc)
             return 0, 1

@@ -136,16 +136,11 @@ def ensure_nodes_for_endpoints(cur, segments: list[dict]) -> dict:
     return coord_to_id
 
 
-def import_geojson(conn, geojson_path: str, europe_only: bool = True):
+def import_geojson(conn, geojson_path: str):
     """Main import: GeoJSON pipeline segments → pipeline_edges + auto nodes."""
     print(f"\nImporting pipeline GeoJSON: {geojson_path}")
     gdf = gem_geojson_to_linestrings(geojson_path)
 
-    if europe_only:
-        # Rough Europe bounding box filter
-        europe_bbox = (-30, 20, 60, 75)
-        gdf = gdf.cx[europe_bbox[0]:europe_bbox[2], europe_bbox[1]:europe_bbox[3]]
-        print(f"  Filtered to Europe bbox: {len(gdf)} segments")
 
     # Build list of segment dicts
     segments = []
