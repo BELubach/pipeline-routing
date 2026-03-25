@@ -10,7 +10,7 @@ import logging
 from pathlib import Path
 
 from app.db.session import SessionLocal
-from app.dataloader.pipeline_batch_loader import PipelineBatchLoader, get_import_status
+from app.batchdataloader.pipeline_batch_loader import PipelineBatchLoader, get_import_status
 
 logging.basicConfig(
     level=logging.INFO,
