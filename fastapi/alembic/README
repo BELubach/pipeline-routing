@@ -1,1 +1,37 @@
-Generic single-database configuration.
+## Alembic Migrations – Overview
+
+This folder manages all database schema changes for the pipeline project using Alembic. It is designed to handle both tables/colu
+
+
+### Folder structure 
+
+alembic/
+├── versions/          # Auto-generated or custom migration scripts (Python)
+│   ├── 001_create_tables.py
+│   ├── 002_create_functions.py
+│   └── 003_add_new_table.py
+└── sql/               # Custom SQL scripts for functions/views
+    ├── nearest_node.sql
+    └── pipeline_routing_graph.sql
+
+
+### How it works
+1) Python Alembic migrations
+- Handle tables, columns, indexes, and constraints.
+- Versioned automatically by Alembic (alembic_version table).
+2) Custom SQL functions & views
+- Managed as separate .sql files for readability and auditability.
+- Applied via Python Alembic migration using op.execute().
+- Ensures correct dependency order (tables exist before functions are created).
+3) Future schema changes
+- Any new tables, columns, or function changes are added as new Alembic migrations.
+- This keeps a chronological, versioned history of all database changes.
+
+#### Why we chose this system
+- Versioned schema: Everything — tables, indexes, functions, views — is tracked.
+- Readable and reviewable SQL: Functions and views live in .sql files, easy to audit.
+- Safe dependency management: Alembic ensures that tables exist before functions/views are applied.
+- Clean separation of concerns:
+* Alembic handles versioning and migrations.
+* Functions/views can be edited independently while still versioned.
+- Scalable workflow: New features, pipelines, or cost calculation logic can be added without breaking existing schema.
