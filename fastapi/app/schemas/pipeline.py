@@ -1,9 +1,12 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
+from sqlalchemy import BigInteger
+
 
 class Node(BaseModel):
-    id: str
+    id: BigInteger
+    IGGIELGN_id: Optional[str] = None
     lat: float
     lon: float
 
