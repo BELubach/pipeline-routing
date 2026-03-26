@@ -69,7 +69,6 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
     this.pipelineService.getNodes().subscribe({
       next: (nodes) => {
         this.nodes = nodes;
-        this.extractNodeTypes(nodes);
         this.loading = false;
         this.cdr.detectChanges();
         this.addMarkersToMap(nodes, true);
@@ -86,37 +85,6 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
     });
   }
 
-  private extractNodeTypes(nodes: PipelineNode[]): void {
-    const typeMap = new Map<string, number>();
-    
-    nodes.forEach(node => {
-      const count = typeMap.get(node.node_type) || 0;
-      typeMap.set(node.node_type, count + 1);
-    });
-
-    this.nodeTypes = Array.from(typeMap.entries()).map(([type, count]) => ({
-      type,
-      label: this.formatNodeTypeLabel(type),
-      color: this.getNodeColor(type),
-      selected: true,
-      count
-    }));
-  }
-
-  private formatNodeTypeLabel(nodeType: string): string {
-    return nodeType.replace(/_/g, ' ');
-  }
-
-  private getNodeColor(nodeType: string): string {
-    switch (nodeType) {
-      case 'border_crossing':
-        return '#3498db'; // Blue
-      case 'lng_terminal':
-        return '#e74c3c'; // Red
-      default:
-        return '#95a5a6'; // Gray
-    }
-  }
 
   onTypeToggle(nodeType: NodeTypeFilter): void {
     this.updateMarkersDisplay();
@@ -129,7 +97,6 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
 
   private addMarkersToMap(nodes: PipelineNode[], fitBounds: boolean = false): void {
     try {
-      
       if (!this.map) {
         console.error('Map not initialized!');
         return;
@@ -138,54 +105,42 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
       // Clear existing markers
       this.markersLayer.clearLayers();
 
-      // Get selected types
-      const selectedTypes = new Set(this.nodeTypes.filter(t => t.selected).map(t => t.type));
-      
-      // If no types selected yet (on initial load), show all
-      const shouldFilterByType = this.nodeTypes.length > 0;
+      const uniqueNodes = nodes.filter((node, index, self) => {
+        if (!Number.isFinite(node.lat) || !Number.isFinite(node.lon)) {
+          return false;
+        }
 
-      // Filter nodes by selected types
-      const filteredNodes = shouldFilterByType 
-        ? nodes.filter(node => selectedTypes.has(node.node_type))
-        : nodes;
+        return index === self.findIndex((candidate) => candidate.lat === node.lat && candidate.lon === node.lon);
+      });
 
-      // Remove duplicates based on coordinates
-      const uniqueNodes = filteredNodes.filter((node, index, self) =>
-        index === self.findIndex((n) => n.lat === node.lat && n.lon === node.lon)
-      );
-      
-      console.log('Unique nodes:', uniqueNodes.length);
       this.displayedNodesCount = uniqueNodes.length;
 
-      uniqueNodes.forEach((node, index) => {
+      uniqueNodes.forEach((node) => {
         const marker = L.circleMarker([node.lat, node.lon], {
           radius: 8,
-          fillColor: this.getNodeColor(node.node_type),
+          fillColor: '#2563eb',
           color: '#fff',
           weight: 2,
           opacity: 1,
-          fillOpacity: 0.8
+          fillOpacity: 0.85
         }).addTo(this.markersLayer);
 
-        // Create interactive popup with reachable nodes feature
         const popupContent = this.createNodePopup(node);
         const popup = L.popup({ minWidth: 250 }).setContent(popupContent);
         marker.bindPopup(popup);
-        
-        // Setup event listener after popup opens
+
         marker.on('popupopen', () => {
           this.setupPopupInteraction(node);
         });
       });
 
-      // Fit map to show all markers only on initial load
       if (fitBounds && uniqueNodes.length > 0) {
-        const bounds = L.latLngBounds(uniqueNodes.map(node => [node.lat, node.lon]));
+        const bounds = L.latLngBounds(uniqueNodes.map((node) => [node.lat, node.lon] as [number, number]));
         this.map.fitBounds(bounds, { padding: [50, 50] });
         console.log('Map bounds set to:', bounds);
       }
-    
-    console.log('Markers added successfully');
+
+      console.log('Markers added successfully:', uniqueNodes.length);
     } catch (error) {
       console.error('Error adding markers to map:', error);
     }
@@ -196,16 +151,7 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
     container.className = 'node-popup';
     container.innerHTML = `
       <h3>${node.name}</h3>
-      <p><strong>Type:</strong> ${this.formatNodeTypeLabel(node.node_type)}</p>
-      <p><strong>Country:</strong> ${node.country || 'N/A'}</p>
       ${node.country_code ? `<p><strong>Country Code:</strong> ${node.country_code}</p>` : ''}
-      ${node.from_country ? `<p><strong>From Country:</strong> ${node.from_country}</p>` : ''}
-      ${node.to_country ? `<p><strong>To Country:</strong> ${node.to_country}</p>` : ''}
-      ${node.from_TSO ? `<p><strong>From TSO:</strong> ${node.from_TSO}</p>` : ''}
-      ${node.to_TSO ? `<p><strong>To TSO:</strong> ${node.to_TSO}</p>` : ''}
-      ${node.lng_capacity_bcm ? `<p><strong>LNG Capacity:</strong> ${node.lng_capacity_bcm} BCM</p>` : ''}
-      ${node.lng_type ? `<p><strong>LNG Type:</strong> ${node.lng_type}</p>` : ''}
-      ${node.is_trading_hub ? '<p><strong>Trading Hub</strong></p>' : ''}
       <hr>
       <div class="reachable-section">
         <h4>Find Reachable Nodes</h4>

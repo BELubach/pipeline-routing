@@ -12,7 +12,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
-from app.schemas.pipeline import BorderNodeDTO
+from app.models.pipeline_iggielgn import GenericNode
+from app.schemas.pipeline import BorderNodeDTO, GenericNodeDTO
 
 router = APIRouter()
 
@@ -227,41 +228,30 @@ async def get_nearest_nodes(
     ]
 
 
-@router.get("/nodes", response_model=list[PipelineNode])
+@router.get("/nodes", response_model=list[GenericNodeDTO])
 async def get_nodes(
-    node_type: str | None = Query(None),
     country: str | None = Query(
         None, description="ISO 3166-1 alpha-2 country code"),
-    hubs_only: bool = Query(False),
     db: AsyncSession = Depends(get_db),
 ):
-    """List pipeline nodes, optionally filtered by type or country."""
+    """List pipeline nodes, optionally filtered by country."""
     result = await db.execute(
         text("""
             SELECT
-                id, name, node_type, country,
-                is_trading_hub, hub_code,
-                lng_capacity_bcm, lng_type,
+                id, name, country_code,
                 ST_X(geom) AS lon,
                 ST_Y(geom) AS lat
-            FROM pipeline_nodes
-            WHERE status = 'operating'
-              AND (CAST(:node_type AS text) IS NULL OR node_type = CAST(:node_type AS text))
-              AND (CAST(:country AS text) IS NULL OR country = CAST(:country AS text))
-              AND (CAST(:hubs_only AS boolean) = FALSE OR is_trading_hub = TRUE)
+            FROM generic_nodes
+            WHERE (CAST(:country AS text) IS NULL OR country_code = CAST(:country AS text))
             ORDER BY name
             LIMIT 500
         """),
-        {"node_type": node_type, "country": country, "hubs_only": hubs_only}
+        {"country": country}
     )
     rows = result.fetchall()
     return [
-        PipelineNode(
-            id=r.id, name=r.name, node_type=r.node_type, country=r.country,
-            is_trading_hub=r.is_trading_hub, hub_code=r.hub_code,
-            lng_capacity_bcm=float(
-                r.lng_capacity_bcm) if r.lng_capacity_bcm else None,
-            lng_type=r.lng_type,
+        GenericNodeDTO(
+            id=r.id, name=r.name,country_code=r.country_code,
             lon=float(r.lon), lat=float(r.lat),
         )
         for r in rows
@@ -342,3 +332,4 @@ async def get_border_nodes(
         )
         for r in rows
     ]
+

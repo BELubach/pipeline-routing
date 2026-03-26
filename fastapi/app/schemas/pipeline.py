@@ -18,3 +18,4 @@ class BorderNodeDTO(Node):
 
 class GenericNodeDTO(Node):
     name: Optional[str] = None
+    country_code: Optional[str] = None
