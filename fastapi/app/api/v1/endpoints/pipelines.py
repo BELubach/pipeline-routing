@@ -11,8 +11,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.db.session import get_db
+from app.schemas.pipeline import BorderNodeDTO
 
 router = APIRouter()
 
@@ -314,3 +314,31 @@ async def get_reachable_from_node(
             for r in rows
         ]
     }
+
+
+@router.get("/border-crossings", response_model=list[BorderNodeDTO])
+async def get_border_nodes(
+    db: AsyncSession = Depends(get_db),
+):
+    """Returns all border crossing nodes."""
+
+    result = await db.execute(
+        text("""
+            SELECT
+                id, name, country_code,
+                ST_X(geom) AS lon, ST_Y(geom) AS lat,
+                from_country, to_country, "from_TSO", "to_TSO"
+            FROM border_nodes
+            ORDER BY name
+        """)
+    )
+    rows = result.fetchall()
+    return [
+        BorderNodeDTO(
+            id=r.id, name=r.name, country_code=r.country_code,
+            from_country=r.from_country, to_country=r.to_country,
+            from_TSO=r.from_TSO, to_TSO=r.to_TSO,
+            lon=float(r.lon), lat=float(r.lat),
+        )
+        for r in rows
+    ]
