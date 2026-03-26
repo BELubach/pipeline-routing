@@ -24,7 +24,7 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
   private map: L.Map | null = null;
   private markersLayer: L.LayerGroup = L.layerGroup();
   private reachableLayer: L.LayerGroup = L.layerGroup();
-  private isInitialLoad = true;
+
   nodes: PipelineNode[] = [];
   nodeTypes: NodeTypeFilter[] = [];
   displayedNodesCount = 0;
@@ -96,17 +96,15 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
 
     this.nodeTypes = Array.from(typeMap.entries()).map(([type, count]) => ({
       type,
-      label: this.formatNodeType(type),
+      label: this.formatNodeTypeLabel(type),
       color: this.getNodeColor(type),
       selected: true,
       count
     }));
   }
 
-  private formatNodeType(type: string): string {
-    return type.split('_').map(word => 
-      word.charAt(0).toUpperCase() + word.slice(1)
-    ).join(' ');
+  private formatNodeTypeLabel(nodeType: string): string {
+    return nodeType.replace(/_/g, ' ');
   }
 
   private getNodeColor(nodeType: string): string {
@@ -198,8 +196,13 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
     container.className = 'node-popup';
     container.innerHTML = `
       <h3>${node.name}</h3>
-      <p><strong>Type:</strong> ${node.node_type.replace(/_/g, ' ')}</p>
+      <p><strong>Type:</strong> ${this.formatNodeTypeLabel(node.node_type)}</p>
       <p><strong>Country:</strong> ${node.country || 'N/A'}</p>
+      ${node.country_code ? `<p><strong>Country Code:</strong> ${node.country_code}</p>` : ''}
+      ${node.from_country ? `<p><strong>From Country:</strong> ${node.from_country}</p>` : ''}
+      ${node.to_country ? `<p><strong>To Country:</strong> ${node.to_country}</p>` : ''}
+      ${node.from_TSO ? `<p><strong>From TSO:</strong> ${node.from_TSO}</p>` : ''}
+      ${node.to_TSO ? `<p><strong>To TSO:</strong> ${node.to_TSO}</p>` : ''}
       ${node.lng_capacity_bcm ? `<p><strong>LNG Capacity:</strong> ${node.lng_capacity_bcm} BCM</p>` : ''}
       ${node.lng_type ? `<p><strong>LNG Type:</strong> ${node.lng_type}</p>` : ''}
       ${node.is_trading_hub ? '<p><strong>Trading Hub</strong></p>' : ''}

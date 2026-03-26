@@ -3,6 +3,11 @@ export interface PipelineNode {
   name: string;
   node_type: 'border_crossing' | 'lng_terminal' | string;
   country: string;
+  country_code?: string | null;
+  from_country?: string | null;
+  to_country?: string | null;
+  from_TSO?: string | null;
+  to_TSO?: string | null;
   is_trading_hub: boolean;
   hub_code: string | null;
   lng_capacity_bcm: number | null;

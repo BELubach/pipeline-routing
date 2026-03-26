@@ -1,0 +1,20 @@
+<div class="map-container">
+  <div class="header">
+    <h1>Border Crossings</h1>
+    <p>Dedicated view for border crossing nodes only.</p>
+  </div>
+
+  <div class="loading" *ngIf="loading">
+    <p>Loading border crossings...</p>
+  </div>
+
+  <div class="error" *ngIf="error">
+    <p>{{ error }}</p>
+  </div>
+
+  <div id="border-map"></div>
+
+  <div class="stats">
+    <p>Displaying {{ nodes.length }} border crossings</p>
+  </div>
+</div>
