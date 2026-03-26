@@ -31,3 +31,22 @@ class BorderNode(Base):
     
     def __repr__(self):
         return  f"<BorderNode(id={self.id}, name={self.name}, country={self.country_code})>"
+
+
+class GenericNode(Base):
+    """
+    A generic node table for any point features that don't fit other categories.
+    This can be used for nodes that are not yet classified or for future data imports.
+    """
+    __tablename__ = "generic_nodes"
+
+    id = Column(String, primary_key=True)           # e.g., "INET_BP_0"
+    name = Column(Text, nullable=False)
+    geom = Column(Geometry("POINT", srid=4326), nullable=False)
+    country_code = Column(String(2))  # ISO 3166-1 alpha-2 country code
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    def __repr__(self):
+        return f"<GenericNode(id={self.id}, name={self.name})>"

@@ -15,3 +15,6 @@ class BorderNodeDTO(Node):
     to_country: str
     from_TSO: Optional[str] = None
     to_TSO: Optional[str] = None
+
+class GenericNodeDTO(Node):
+    name: Optional[str] = None
