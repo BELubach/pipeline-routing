@@ -5,15 +5,16 @@ FastAPI router for pipeline network routing and analysis
 
 from __future__ import annotations
 
+import json
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
-from sqlalchemy import text
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
-from app.models.pipeline_iggielgn import GenericNode
-from app.schemas.pipeline import BorderNodeDTO, GenericNodeDTO
+from app.models.pipeline_iggielgn import GenericNode, PipelineSegment
+from app.schemas.pipeline import BorderNodeDTO, GenericNodeDTO, PipelineSegmentDTO
 
 router = APIRouter()
 
@@ -333,3 +334,50 @@ async def get_border_nodes(
         for r in rows
     ]
 
+
+
+@router.get('/segments', response_model=list[PipelineSegmentDTO])
+async def get_pipeline_segments(
+    country: str | None = Query(
+        None, description="Filter segments by country code (either end)"),
+    is_h_gas: bool | None = Query(
+        None, description="Filter by H-gas (True), L-gas (False), or both (None)"),
+    db: AsyncSession = Depends(get_db),
+):
+    """List pipeline segments with optional filters."""
+    statement = (
+        select(
+            PipelineSegment,
+            func.ST_AsGeoJSON(PipelineSegment.geom).label("geometry"),
+        )
+        .order_by(PipelineSegment.id)
+        .limit(1000)
+    )
+
+    if country:
+        statement = statement.where(
+            or_(
+                PipelineSegment.country_code_from == country,
+                PipelineSegment.country_code_to == country,
+            )
+        )
+    if is_h_gas is not None:
+        statement = statement.where(PipelineSegment.is_H_gas == is_h_gas)
+
+    result = await db.execute(statement)
+    rows = result.all()
+
+    return [
+        PipelineSegmentDTO(
+            id=segment.id,
+            from_node=segment.from_node_id,
+            to_node=segment.to_node_id,
+            length_km=float(segment.length_km),
+            IGGIELGN_id=segment.IGGIELGN_id,
+            country_code_from=segment.country_code_from,
+            country_code_to=segment.country_code_to,
+            is_H_gas=segment.is_H_gas,
+            geometry=json.loads(geometry) if geometry else None,
+        )
+        for segment, geometry in rows
+    ]
