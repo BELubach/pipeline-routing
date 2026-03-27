@@ -4,13 +4,17 @@
     <p>Dedicated view for border crossing nodes only.</p>
   </div>
 
-  <div class="loading" *ngIf="loading">
-    <p>Loading border crossings...</p>
-  </div>
+  @if (loading) {
+    <div class="loading">
+      <p>Loading border crossings...</p>
+    </div>
+  }
 
-  <div class="error" *ngIf="error">
-    <p>{{ error }}</p>
-  </div>
+  @if (error) {
+    <div class="error">
+      <p>{{ error }}</p>
+    </div>
+  }
 
   <div id="border-map"></div>
 

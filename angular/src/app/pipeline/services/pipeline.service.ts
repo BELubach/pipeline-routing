@@ -1,16 +1,16 @@
-import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { NodeId, PipelineNode, ReachableNodesResponse } from '../models/pipeline-node.model';
+
 import { BorderNode } from '../models/border-node.model';
+import { NodeId, PipelineNode, ReachableNodesResponse } from '../models/pipeline-node.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PipelineService {
-  private apiUrl = '/api/v1';
-
-  constructor(private http: HttpClient) {}
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = '/api/v1';
 
   getNodes(): Observable<PipelineNode[]> {
     return this.http.get<PipelineNode[]>(`${this.apiUrl}/pipelines/nodes`);

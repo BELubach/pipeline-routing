@@ -1,28 +1,24 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import * as L from 'leaflet';
-import { PipelineService } from '../services/pipeline.service';
-import { BorderNode } from '../models/border-node.model';
+
+import { BorderNode } from './models/border-node.model';
+import { PipelineService } from './services/pipeline.service';
 
 @Component({
   selector: 'app-border-crossings',
-  standalone: true,
-  imports: [CommonModule],
   templateUrl: './border-crossings.component.html',
-  styleUrls: ['./border-crossings.component.css']
+  styleUrl: './border-crossings.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BorderCrossingsComponent implements OnInit, OnDestroy {
+  private readonly pipelineService = inject(PipelineService);
+  private readonly changeDetectorRef = inject(ChangeDetectorRef);
   private map: L.Map | null = null;
-  private markersLayer: L.LayerGroup = L.layerGroup();
+  private readonly markersLayer: L.LayerGroup = L.layerGroup();
 
   nodes: BorderNode[] = [];
   loading = true;
   error: string | null = null;
-
-  constructor(
-    private pipelineService: PipelineService,
-    private cdr: ChangeDetectorRef
-  ) {}
 
   ngOnInit(): void {
     this.initMap();
@@ -30,9 +26,7 @@ export class BorderCrossingsComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.map) {
-      this.map.remove();
-    }
+    this.map?.remove();
   }
 
   private initMap(): void {
@@ -54,24 +48,26 @@ export class BorderCrossingsComponent implements OnInit, OnDestroy {
       next: (nodes) => {
         this.nodes = nodes;
         this.loading = false;
-        this.cdr.detectChanges();
+        this.changeDetectorRef.markForCheck();
         this.addMarkersToMap(nodes);
       },
       error: (err) => {
         console.error('Error loading border crossings:', err);
         this.error = `Failed to load border crossings: ${err.message || err.status || 'Unknown error'}`;
         this.loading = false;
-        this.cdr.detectChanges();
+        this.changeDetectorRef.markForCheck();
       }
     });
   }
 
   private addMarkersToMap(nodes: BorderNode[]): void {
-    if (!this.map) return;
+    if (!this.map) {
+      return;
+    }
 
     this.markersLayer.clearLayers();
 
-    nodes.forEach(node => {
+    nodes.forEach((node) => {
       const marker = L.circleMarker([node.lat, node.lon], {
         radius: 8,
         fillColor: '#e67e22',
@@ -86,7 +82,7 @@ export class BorderCrossingsComponent implements OnInit, OnDestroy {
     });
 
     if (nodes.length > 0) {
-      const bounds = L.latLngBounds(nodes.map(n => [n.lat, n.lon]));
+      const bounds = L.latLngBounds(nodes.map((node) => [node.lat, node.lon] as [number, number]));
       this.map.fitBounds(bounds, { padding: [50, 50] });
     }
   }

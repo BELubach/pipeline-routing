@@ -3,7 +3,7 @@
   height: 100vh;
 }
 
-.pipeline-map-shell {
+.pipeline-shell {
   display: flex;
   flex-direction: column;
   height: 100%;

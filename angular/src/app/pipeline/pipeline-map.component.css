@@ -57,7 +57,7 @@
   user-select: none;
 }
 
-.filter-item input[type="checkbox"] {
+.filter-item input[type='checkbox'] {
   cursor: pointer;
   width: 16px;
   height: 16px;
@@ -99,26 +99,6 @@
   z-index: 0;
 }
 
-.marker {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 2px solid white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.marker.border-crossing {
-  background-color: #3498db;
-}
-
-.marker.lng-terminal {
-  background-color: #e74c3c;
-}
-
-.marker.default {
-  background-color: #95a5a6;
-}
-
 .loading,
 .error {
   position: absolute;
@@ -150,7 +130,6 @@
   color: #666;
 }
 
-/* Leaflet popup styling */
 :host ::ng-deep .node-popup h3 {
   margin: 0 0 0.5rem 0;
   font-size: 1rem;
@@ -190,7 +169,7 @@
   margin-bottom: 0.25rem;
 }
 
-:host ::ng-deep .reachable-section input[type="number"] {
+:host ::ng-deep .reachable-section input[type='number'] {
   width: 100%;
   padding: 0.4rem;
   border: 1px solid #ccc;

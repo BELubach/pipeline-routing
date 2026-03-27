@@ -1,0 +1,41 @@
+<div class="map-container">
+  <div class="header">
+    <h1>Pipeline Network Map</h1>
+    <div class="filters">
+      <h3>Filter by Type:</h3>
+      <div class="type-filters">
+        @for (nodeType of nodeTypes; track nodeType.type) {
+          <div class="filter-item">
+            <label>
+              <input
+                type="checkbox"
+                [(ngModel)]="nodeType.selected"
+                (change)="onTypeToggle(nodeType)"
+              />
+              <span class="legend-circle" [style.background-color]="nodeType.color"></span>
+              <span class="filter-label">{{ nodeType.label }} ({{ nodeType.count }})</span>
+            </label>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  @if (loading) {
+    <div class="loading">
+      <p>Loading pipeline nodes...</p>
+    </div>
+  }
+
+  @if (error) {
+    <div class="error">
+      <p>{{ error }}</p>
+    </div>
+  }
+
+  <div id="map"></div>
+
+  <div class="stats">
+    <p>Displaying {{ displayedNodesCount }} of {{ nodes.length }} nodes</p>
+  </div>
+</div>

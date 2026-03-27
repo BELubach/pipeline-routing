@@ -27,7 +27,7 @@ export const routes: Routes = [
   },
   {
     path: 'pipeline-map',
-    loadChildren: () => import('./pipeline-map/pipeline-map.routes').then(m => m.PIPELINE_MAP_ROUTES)
+    loadChildren: () => import('./pipeline/pipeline.routes').then(m => m.PIPELINE_ROUTES)
   },
   {
     path: '',

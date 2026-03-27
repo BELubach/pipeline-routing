@@ -1,9 +1,9 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import * as L from 'leaflet';
-import { PipelineService } from '../services/pipeline.service';
-import { PipelineNode, ReachableNode } from '../models/pipeline-node.model';
+
+import { PipelineNode, ReachableNode } from './models/pipeline-node.model';
+import { PipelineService } from './services/pipeline.service';
 
 interface NodeTypeFilter {
   type: string;
@@ -15,15 +15,17 @@ interface NodeTypeFilter {
 
 @Component({
   selector: 'app-pipeline-map',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './pipeline-map.component.html',
-  styleUrls: ['./pipeline-map.component.css']
+  styleUrl: './pipeline-map.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PipelineMapComponent implements OnInit, OnDestroy {
+  private readonly pipelineService = inject(PipelineService);
+  private readonly changeDetectorRef = inject(ChangeDetectorRef);
   private map: L.Map | null = null;
-  private markersLayer: L.LayerGroup = L.layerGroup();
-  private reachableLayer: L.LayerGroup = L.layerGroup();
+  private readonly markersLayer: L.LayerGroup = L.layerGroup();
+  private readonly reachableLayer: L.LayerGroup = L.layerGroup();
 
   nodes: PipelineNode[] = [];
   nodeTypes: NodeTypeFilter[] = [];
@@ -31,36 +33,30 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
   loading = true;
   error: string | null = null;
 
-  constructor(
-    private pipelineService: PipelineService,
-    private cdr: ChangeDetectorRef
-  ) {}
-
   ngOnInit(): void {
     this.initMap();
     this.loadNodes();
   }
 
   ngOnDestroy(): void {
-    if (this.map) {
-      this.map.remove();
-    }
+    this.map?.remove();
+  }
+
+  onTypeToggle(_nodeType: NodeTypeFilter): void {
+    this.updateMarkersDisplay();
   }
 
   private initMap(): void {
-    // Initialize map centered on Europe
     this.map = L.map('map', {
       center: [45.0, 10.0],
       zoom: 4
     });
 
-    // Add OpenStreetMap tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
       attribution: '© OpenStreetMap contributors'
     }).addTo(this.map);
-    
-    // Add layers
+
     this.reachableLayer.addTo(this.map);
     this.markersLayer.addTo(this.map);
   }
@@ -70,14 +66,14 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
       next: (nodes) => {
         this.nodes = nodes;
         this.loading = false;
-        this.cdr.detectChanges();
+        this.changeDetectorRef.markForCheck();
         this.addMarkersToMap(nodes, true);
       },
       error: (err) => {
         console.error('Error loading nodes:', err);
         this.error = `Failed to load pipeline nodes: ${err.message || err.status || 'Unknown error'}`;
         this.loading = false;
-        this.cdr.detectChanges();
+        this.changeDetectorRef.markForCheck();
       },
       complete: () => {
         console.log('Observable completed');
@@ -85,24 +81,18 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
     });
   }
 
-
-  onTypeToggle(nodeType: NodeTypeFilter): void {
-    this.updateMarkersDisplay();
-  }
-
   private updateMarkersDisplay(): void {
     this.markersLayer.clearLayers();
     this.addMarkersToMap(this.nodes, false);
   }
 
-  private addMarkersToMap(nodes: PipelineNode[], fitBounds: boolean = false): void {
+  private addMarkersToMap(nodes: PipelineNode[], fitBounds = false): void {
     try {
       if (!this.map) {
         console.error('Map not initialized!');
         return;
       }
 
-      // Clear existing markers
       this.markersLayer.clearLayers();
 
       const uniqueNodes = nodes.filter((node, index, self) => {
@@ -141,6 +131,7 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
       }
 
       console.log('Markers added successfully:', uniqueNodes.length);
+      this.changeDetectorRef.markForCheck();
     } catch (error) {
       console.error('Error adding markers to map:', error);
     }
@@ -168,12 +159,12 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
   private setupPopupInteraction(node: PipelineNode): void {
     const findButton = document.getElementById(`findReachable-${node.id}`);
     const clearButton = document.getElementById(`clearReachable-${node.id}`);
-    const maxCostInput = document.getElementById(`maxCost-${node.id}`) as HTMLInputElement;
+    const maxCostInput = document.getElementById(`maxCost-${node.id}`) as HTMLInputElement | null;
     const resultDiv = document.getElementById(`reachableResult-${node.id}`);
 
     if (findButton && maxCostInput && resultDiv) {
       findButton.addEventListener('click', () => {
-        const maxCost = parseFloat(maxCostInput.value);
+        const maxCost = Number.parseFloat(maxCostInput.value);
         if (maxCost > 0) {
           this.findReachableNodes(node, maxCost, resultDiv);
         }
@@ -192,7 +183,7 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
 
   private findReachableNodes(sourceNode: PipelineNode, maxCost: number, resultDiv: HTMLElement): void {
     resultDiv.innerHTML = '<p class="loading-text">Loading...</p>';
-    
+
     this.pipelineService.getReachableNodes(sourceNode.id, maxCost).subscribe({
       next: (response) => {
         this.visualizeReachableNodes(sourceNode, response.nodes);
@@ -208,13 +199,13 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
   }
 
   private visualizeReachableNodes(sourceNode: PipelineNode, reachableNodes: ReachableNode[]): void {
-    // Clear previous visualization
     this.reachableLayer.clearLayers();
 
-    if (!this.map) return;
+    if (!this.map) {
+      return;
+    }
 
-    // Draw lines from source to each reachable node
-    reachableNodes.forEach(targetNode => {
+    reachableNodes.forEach((targetNode) => {
       const line = L.polyline(
         [[sourceNode.lat, sourceNode.lon], [targetNode.lat, targetNode.lon]],
         {
@@ -225,7 +216,6 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
         }
       ).addTo(this.reachableLayer);
 
-      // Add popup to line showing cost
       line.bindPopup(`
         <div class="path-popup">
           <p><strong>From:</strong> ${sourceNode.name}</p>
@@ -235,8 +225,7 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
       `);
     });
 
-    // Add markers for reachable nodes
-    reachableNodes.forEach(node => {
+    reachableNodes.forEach((node) => {
       const marker = L.circleMarker([node.lat, node.lon], {
         radius: 6,
         fillColor: '#2ecc71',
@@ -255,7 +244,6 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
       `);
     });
 
-    // Highlight source node
     const sourceMarker = L.circleMarker([sourceNode.lat, sourceNode.lon], {
       radius: 10,
       fillColor: '#e74c3c',
@@ -264,8 +252,8 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
       opacity: 1,
       fillOpacity: 0.9
     }).addTo(this.reachableLayer);
-    
-    sourceMarker.bindPopup(`<div class="source-node-popup"><strong>Source Node</strong></div>`);
+
+    sourceMarker.bindPopup('<div class="source-node-popup"><strong>Source Node</strong></div>');
   }
 
   private clearReachableNodes(): void {
