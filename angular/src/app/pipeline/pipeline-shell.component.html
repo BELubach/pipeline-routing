@@ -1,29 +1,27 @@
 <div class="pipeline-shell">
-  <nav class="feature-nav">
-    <div class="feature-nav__title">
-      <h1>Pipeline Maps</h1>
-      <p>Switch between the full network view and border crossings only.</p>
-    </div>
+    <nav class="feature-nav">
+        <div class="feature-nav__title">
+            <h1>Pipeline Maps</h1>
+            <p>Switch between the full network view and border crossings only.</p>
+        </div>
 
-    <div class="feature-nav__links">
-      <a
-        routerLink="/pipeline-map/network"
-        routerLinkActive="active"
-        [routerLinkActiveOptions]="{ exact: true }"
-      >
-        Network Map
-      </a>
-      <a
-        routerLink="/pipeline-map/border-crossings"
-        routerLinkActive="active"
-        [routerLinkActiveOptions]="{ exact: true }"
-      >
-        Border Crossings
-      </a>
-    </div>
-  </nav>
+        <div class="feature-nav__links">
+            <a routerLink="/pipeline-map/network" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+                Network Map
+            </a>
+            <a routerLink="/pipeline-map/border-crossings" routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: true }">
+                Border Crossings
+            </a>
+            <a routerLink="/pipeline-map/segments" routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: true }">
+                Pipeline Segments
+            </a>
 
-  <section class="feature-content">
-    <router-outlet></router-outlet>
-  </section>
+        </div>
+    </nav>
+
+    <section class="feature-content">
+        <router-outlet></router-outlet>
+    </section>
 </div>

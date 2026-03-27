@@ -1,0 +1,23 @@
+<div class="map-container">
+  <div class="header">
+    <h1>Pipeline Segments</h1>
+  </div>
+
+  @if (loading) {
+  <div class="loading">
+    <p>Loading pipeline segments...</p>
+  </div>
+  }
+
+  @if (error) {
+  <div class="error">
+    <p>{{ error }}</p>
+  </div>
+  }
+
+  <div id="map"></div>
+
+  <div class="stats">
+    <p>Displaying {{ segments.length }} segments with {{ nodes.length }} total nodes</p>
+  </div>
+</div>

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 import { BorderNode } from '../models/border-node.model';
 import { NodeId, PipelineNode, ReachableNodesResponse } from '../models/pipeline-node.model';
+import { PipelineSegment } from '../models/pipeline-segments';
 
 @Injectable({
   providedIn: 'root'
@@ -25,4 +26,9 @@ export class PipelineService {
   getBorderCrossings(): Observable<BorderNode[]> {
     return this.http.get<BorderNode[]>(`${this.apiUrl}/pipelines/border-crossings`);
   }
+
+  getPipelineSegments(): Observable<PipelineSegment[]> {
+    return this.http.get<PipelineSegment[]>(`${this.apiUrl}/pipelines/segments`);
+  }
 }
+
