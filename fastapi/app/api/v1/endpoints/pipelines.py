@@ -245,7 +245,6 @@ async def get_nodes(
             FROM generic_nodes
             WHERE (CAST(:country AS text) IS NULL OR country_code = CAST(:country AS text))
             ORDER BY name
-            LIMIT 500
         """),
         {"country": country}
     )
@@ -351,7 +350,7 @@ async def get_pipeline_segments(
             func.ST_AsGeoJSON(PipelineSegment.geom).label("geometry"),
         )
         .order_by(PipelineSegment.id)
-        .limit(1000)
+        .limit(10000)
     )
 
     if country:
