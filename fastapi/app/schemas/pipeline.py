@@ -4,7 +4,7 @@ from typing import Optional
 
 
 class Node(BaseModel):
-    id: str
+    id: int
     lat: float
     lon: float
 
@@ -24,8 +24,8 @@ class GenericNodeDTO(Node):
 
 class Segment(BaseModel):
     id: int
-    from_node: Optional[str] = None 
-    to_node: Optional[str] = None
+    from_node: Optional[int] = None 
+    to_node: Optional[int] = None
     length_km: Optional[float] = None
 
 
@@ -40,16 +40,16 @@ class PipelineSegmentDTO(Segment):
 class RouteSegment(BaseModel):
     """A segment in a route path"""
     segment_id: int
-    from_node_id: str
-    to_node_id: str
+    from_node_id: int
+    to_node_id: int
     length_km: float
     geometry: dict | None = None
 
 
 class RouteResponse(BaseModel):
     """Complete route between two nodes"""
-    source_node_id: str
-    target_node_id: str
+    source_node_id: int
+    target_node_id: int
     total_distance_km: float
     num_segments: int
     path: list[RouteSegment]

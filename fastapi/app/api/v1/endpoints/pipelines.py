@@ -132,8 +132,8 @@ async def get_pipeline_segments(
 
 @router.get('/route/{source_node_id}/{target_node_id}', response_model=RouteResponse)
 async def get_route(
-    source_node_id: str,
-    target_node_id: str,
+    source_node_id: int,
+    target_node_id: int,
     directed: bool = Query(False, description="Whether to treat network as directed (default: False for bidirectional)"),
     db: AsyncSession = Depends(get_db),
 ):
@@ -168,18 +168,6 @@ async def get_route(
     # All parameters need explicit casts to disambiguate the function overload
     
     routing_query = text("""
-        WITH graph AS (
-            SELECT 
-                id,
-                from_node_id AS source,
-                to_node_id AS target,
-                CAST(length_km AS float8) AS cost,
-                CAST(length_km AS float8) AS reverse_cost
-            FROM pipeline_segments
-            WHERE from_node_id IS NOT NULL 
-              AND to_node_id IS NOT NULL
-              AND length_km > 0
-        )
         SELECT 
             r.seq,
             r.path_seq,
@@ -193,9 +181,18 @@ async def get_route(
             ps.length_km,
             ST_AsGeoJSON(ps.geom) AS geometry
         FROM pgr_dijkstra(
-            CAST('SELECT id, source, target, cost, reverse_cost FROM graph' AS TEXT),
-            CAST(:source_node AS TEXT),
-            CAST(:target_node AS TEXT),
+            'SELECT 
+                id, 
+                from_node_id AS source, 
+                to_node_id AS target, 
+                CAST(length_km AS float8) AS cost, 
+                CAST(length_km AS float8) AS reverse_cost 
+            FROM pipeline_segments 
+            WHERE from_node_id IS NOT NULL 
+              AND to_node_id IS NOT NULL 
+              AND length_km > 0',
+            CAST(:source_node AS INTEGER),
+            CAST(:target_node AS INTEGER),
             CAST(:directed AS BOOLEAN)
         ) r
         LEFT JOIN pipeline_segments ps ON r.edge = ps.id
