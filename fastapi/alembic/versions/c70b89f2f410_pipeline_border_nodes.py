@@ -19,7 +19,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.create_table('border_nodes',
-    sa.Column('id', sa.String(), nullable=False),
+    sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False),
+    sa.Column('IGGIELGN_id', sa.String(), nullable=True),
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('geom', geoalchemy2.types.Geometry(geometry_type='POINT', srid=4326, spatial_index=False, from_text='ST_GeomFromEWKT', name='geometry', nullable=False), nullable=False),
     sa.Column('country_code', sa.String(), nullable=False),

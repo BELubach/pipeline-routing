@@ -35,3 +35,21 @@ class PipelineSegmentDTO(Segment):
     country_code_to: Optional[str] = None
     is_H_gas: bool = True
     geometry: dict | None = None
+
+
+class RouteSegment(BaseModel):
+    """A segment in a route path"""
+    segment_id: int
+    from_node_id: str
+    to_node_id: str
+    length_km: float
+    geometry: dict | None = None
+
+
+class RouteResponse(BaseModel):
+    """Complete route between two nodes"""
+    source_node_id: str
+    target_node_id: str
+    total_distance_km: float
+    num_segments: int
+    path: list[RouteSegment]

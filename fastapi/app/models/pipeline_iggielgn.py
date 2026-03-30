@@ -16,7 +16,8 @@ class BorderNode(Base):
     """
     __tablename__ = "border_nodes"
 
-    id = Column(String, primary_key=True)           # e.g., "INET_BP_0"
+    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
+    IGGIELGN_id = Column(String, nullable=False)           # e.g., "INET_BP_0"
     name = Column(String, nullable=False)           # e.g., "Almeria_[208]"
     geom = Column(Geometry("POINT", srid=4326), nullable=False)  # PostGIS geometry
     country_code = Column(String, nullable=False)   # Country where node is located
@@ -40,7 +41,8 @@ class GenericNode(Base):
     """
     __tablename__ = "generic_nodes"
 
-    id = Column(String, primary_key=True)           # e.g., "INET_BP_0"
+    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
+    IGGIELGN_id = Column(String, nullable=False)           # e.g., "INET_BP_0"
     name = Column(Text, nullable=False)
     geom = Column(Geometry("POINT", srid=4326), nullable=False)
     country_code = Column(String(2))  # ISO 3166-1 alpha-2 country code
