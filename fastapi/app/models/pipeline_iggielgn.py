@@ -18,7 +18,7 @@ class BorderNode(Base):
 
     id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
     IGGIELGN_id = Column(String, nullable=False)           # e.g., "INET_BP_0"
-    name = Column(String, nullable=False)           # e.g., "Almeria_[208]"
+    name = Column(String, nullable=True)           # e.g., "Almeria_[208]"
     geom = Column(Geometry("POINT", srid=4326), nullable=False)  # PostGIS geometry
     country_code = Column(String, nullable=False)   # Country where node is located
     from_country = Column(String, nullable=False)   # Source country for pipeline segment
@@ -43,7 +43,7 @@ class GenericNode(Base):
 
     id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
     IGGIELGN_id = Column(String, nullable=False)           # e.g., "INET_BP_0"
-    name = Column(Text, nullable=False)
+    name = Column(Text, nullable=True)
     geom = Column(Geometry("POINT", srid=4326), nullable=False)
     country_code = Column(String(2))  # ISO 3166-1 alpha-2 country code
 

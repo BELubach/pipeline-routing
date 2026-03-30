@@ -25,7 +25,7 @@ def upgrade() -> None:
     op.create_table('generic_nodes',
     sa.Column('id', sa.BigInteger(), autoincrement=True, nullable=False),
     sa.Column('IGGIELGN_id', sa.String(), nullable=True),
-    sa.Column('name', sa.Text(), nullable=False),
+    sa.Column('name', sa.Text(), nullable=True),
     sa.Column('geom', geoalchemy2.types.Geometry(geometry_type='POINT', spatial_index=False, srid=4326, from_text='ST_GeomFromEWKT', name='geometry', nullable=False), nullable=False),
     sa.Column('country_code', sa.String(length=2), nullable=True),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
