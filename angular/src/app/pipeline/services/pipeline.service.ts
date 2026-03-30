@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 import { BorderNode } from '../models/border-node.model';
 import { NodeId, PipelineNode, ReachableNodesResponse } from '../models/pipeline-node.model';
-import { PipelineSegment } from '../models/pipeline-segments';
+import { PipelineSegment, RouteResponse } from '../models/pipeline-segments';
 
 @Injectable({
   providedIn: 'root'
@@ -29,6 +29,12 @@ export class PipelineService {
 
   getPipelineSegments(): Observable<PipelineSegment[]> {
     return this.http.get<PipelineSegment[]>(`${this.apiUrl}/pipelines/segments`);
+  }
+
+  getRoute(sourceNodeId: NodeId, targetNodeId: NodeId): Observable<RouteResponse> {
+    return this.http.get<RouteResponse>(
+      `${this.apiUrl}/pipelines/route/${sourceNodeId}/${targetNodeId}`
+    );
   }
 }
 

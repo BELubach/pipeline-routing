@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnIni
 import * as L from 'leaflet';
 
 import { PipelineNode } from './models/pipeline-node.model';
-import { PipelineSegment } from './models/pipeline-segments';
+import { PipelineSegment, RouteResponse } from './models/pipeline-segments';
 import { PipelineService } from './services/pipeline.service';
 
 @Component({
@@ -18,11 +18,20 @@ export class PipelineSegments implements OnInit, OnDestroy {
   private map: L.Map | null = null;
   private readonly segmentsLayer: L.LayerGroup = L.layerGroup();
   private readonly markersLayer: L.LayerGroup = L.layerGroup();
+  private readonly routeLayer: L.LayerGroup = L.layerGroup();
 
   segments: PipelineSegment[] = [];
   nodes: PipelineNode[] = [];
   loading = true;
   error: string | null = null;
+  
+  // Routing state
+  private selectedNodes: { first: PipelineNode | null; second: PipelineNode | null } = {
+    first: null,
+    second: null
+  };
+  private nodeMarkers: Map<string | number, L.CircleMarker> = new Map();
+  private currentRoute: RouteResponse | null = null;
 
   
   ngOnInit(): void {
@@ -47,6 +56,7 @@ export class PipelineSegments implements OnInit, OnDestroy {
 
     this.segmentsLayer.addTo(this.map);
     this.markersLayer.addTo(this.map);
+    this.routeLayer.addTo(this.map);
   }
 
 
@@ -114,6 +124,9 @@ export class PipelineSegments implements OnInit, OnDestroy {
         opacity: 0.7
       }).addTo(this.segmentsLayer);
 
+      // Store segment data on polyline for later reference
+      (polyline as any)._segmentData = segment;
+
       polyline.bindPopup(`
         <div class="segment-popup">
           <h4>Pipeline Segment</h4>
@@ -151,6 +164,7 @@ export class PipelineSegments implements OnInit, OnDestroy {
     }
 
     this.markersLayer.clearLayers();
+    this.nodeMarkers.clear();
 
     // Collect all unique node IDs that are referenced in segments
     const referencedNodeIds = new Set<string | number>();
@@ -176,6 +190,12 @@ export class PipelineSegments implements OnInit, OnDestroy {
         fillOpacity: isSegmentEndpoint ? 0.9 : 0.7
       }).addTo(this.markersLayer);
 
+      // Store marker reference
+      this.nodeMarkers.set(node.id, marker);
+
+      // Add click handler for routing
+      marker.on('click', () => this.onNodeClick(node));
+
       marker.bindPopup(`
         <div class="node-popup">
           <h4>${node.name}</h4>
@@ -187,6 +207,195 @@ export class PipelineSegments implements OnInit, OnDestroy {
     });
 
     console.log(`Drew ${this.nodes.length} total nodes (${referencedNodeIds.size} segment endpoints)`);
+  }
+
+  private onNodeClick(node: PipelineNode): void {
+    console.log('Node clicked:', node);
+
+    if (!this.selectedNodes.first) {
+      // First node selection
+      this.selectedNodes.first = node;
+      this.highlightSelectedNode(node, '#fbbf24'); // Yellow/amber for first node
+      this.grayOutOtherNodes(node.id);
+      console.log('First node selected:', node.id);
+    } else if (!this.selectedNodes.second) {
+      // Second node selection
+      if (this.selectedNodes.first.id === node.id) {
+        // Clicked same node, reset
+        this.clearRouting();
+        return;
+      }
+      
+      this.selectedNodes.second = node;
+      this.highlightSelectedNode(node, '#22c55e'); // Green for second node
+      console.log('Second node selected:', node.id);
+      
+      // Fetch and display route
+      this.fetchAndDisplayRoute();
+    } else {
+      // Already have two nodes selected, reset and start over
+      this.clearRouting();
+      this.onNodeClick(node);
+    }
+  }
+
+  private highlightSelectedNode(node: PipelineNode, color: string): void {
+    const marker = this.nodeMarkers.get(node.id);
+    if (marker) {
+      marker.setStyle({
+        fillColor: color,
+        radius: 8,
+        fillOpacity: 1,
+        weight: 3
+      });
+    }
+  }
+
+  private grayOutOtherNodes(selectedNodeId: string | number): void {
+    // Gray out all segments
+    this.segmentsLayer.eachLayer((layer) => {
+      if (layer instanceof L.Polyline) {
+        layer.setStyle({
+          opacity: 0.2,
+          color: '#9ca3af'
+        });
+      }
+    });
+
+    // Gray out all other node markers
+    this.nodeMarkers.forEach((marker, nodeId) => {
+      if (nodeId !== selectedNodeId) {
+        marker.setStyle({
+          fillOpacity: 0.3,
+          opacity: 0.3
+        });
+      }
+    });
+  }
+
+  private resetNodeStyles(): void {
+    // Reset segments to original colors
+    this.segments.forEach((segment) => {
+      const color = segment.is_H_gas ? '#3b82f6' : '#10b981';
+      this.segmentsLayer.eachLayer((layer) => {
+        if (layer instanceof L.Polyline) {
+          const layerSegment = (layer as any)._segmentData;
+          if (layerSegment && layerSegment.id === segment.id) {
+            layer.setStyle({
+              color,
+              opacity: 0.7,
+              weight: 3
+            });
+          }
+        }
+      });
+    });
+
+    // Reset all node markers
+    const referencedNodeIds = new Set<string | number>();
+    this.segments.forEach((segment) => {
+      referencedNodeIds.add(segment.from_node);
+      referencedNodeIds.add(segment.to_node);
+    });
+
+    this.nodes.forEach((node) => {
+      const marker = this.nodeMarkers.get(node.id);
+      if (marker) {
+        const isSegmentEndpoint = referencedNodeIds.has(node.id);
+        marker.setStyle({
+          radius: isSegmentEndpoint ? 6 : 5,
+          fillColor: isSegmentEndpoint ? '#ef4444' : '#2563eb',
+          fillOpacity: isSegmentEndpoint ? 0.9 : 0.7,
+          opacity: 1,
+          weight: 2
+        });
+      }
+    });
+  }
+
+  private fetchAndDisplayRoute(): void {
+    if (!this.selectedNodes.first || !this.selectedNodes.second) {
+      return;
+    }
+
+    console.log('Fetching route between:', this.selectedNodes.first.id, 'and', this.selectedNodes.second.id);
+
+    this.pipelineService.getRoute(this.selectedNodes.first.id, this.selectedNodes.second.id)
+      .subscribe({
+        next: (route) => {
+          console.log('Route received:', route);
+          this.currentRoute = route;
+          this.displayRoute(route);
+        },
+        error: (err) => {
+          console.error('Error fetching route:', err);
+          alert(`Failed to find route: ${err.error?.detail || err.message || 'Unknown error'}`);
+          this.clearRouting();
+        }
+      });
+  }
+
+  private displayRoute(route: RouteResponse): void {
+    if (!this.map) {
+      return;
+    }
+
+    this.routeLayer.clearLayers();
+
+    // Draw each segment in the route
+    route.path.forEach((routeSegment) => {
+      if (!routeSegment.geometry?.coordinates || routeSegment.geometry.coordinates.length < 2) {
+        return;
+      }
+
+      const latLngs: [number, number][] = routeSegment.geometry.coordinates.map(
+        ([lon, lat]) => [lat, lon]
+      );
+
+      const routeLine = L.polyline(latLngs, {
+        color: '#f59e0b', // Orange/amber for route
+        weight: 5,
+        opacity: 1,
+        className: 'route-line'
+      }).addTo(this.routeLayer);
+
+      routeLine.bindPopup(`
+        <div class="route-segment-popup">
+          <h4>Route Segment</h4>
+          <p><strong>From:</strong> ${routeSegment.from_node_id}</p>
+          <p><strong>To:</strong> ${routeSegment.to_node_id}</p>
+          <p><strong>Length:</strong> ${routeSegment.length_km.toFixed(2)} km</p>
+        </div>
+      `);
+    });
+
+    // Add route info popup
+    if (this.selectedNodes.first && this.selectedNodes.second) {
+      const marker = this.nodeMarkers.get(this.selectedNodes.second.id);
+      if (marker) {
+        const routeInfoPopup = `
+          <div class="route-info-popup">
+            <h4>Route Found!</h4>
+            <p><strong>From:</strong> ${this.selectedNodes.first.name}</p>
+            <p><strong>To:</strong> ${this.selectedNodes.second.name}</p>
+            <p><strong>Total Distance:</strong> ${route.total_distance_km} km</p>
+            <p><strong>Segments:</strong> ${route.num_segments}</p>
+          </div>
+        `;
+        marker.bindPopup(routeInfoPopup).openPopup();
+      }
+    }
+
+    console.log(`Route displayed: ${route.num_segments} segments, ${route.total_distance_km} km`);
+  }
+
+  private clearRouting(): void {
+    this.selectedNodes.first = null;
+    this.selectedNodes.second = null;
+    this.currentRoute = null;
+    this.routeLayer.clearLayers();
+    this.resetNodeStyles();
+    console.log('Routing cleared');
   }
 
 
