@@ -14,7 +14,7 @@ export class PipelineService {
   private readonly apiUrl = '/api/v1';
 
   getNodes(): Observable<PipelineNode[]> {
-    return this.http.get<PipelineNode[]>(`${this.apiUrl}/pipelines/nodes`);
+    return this.http.get<PipelineNode[]>(`${this.apiUrl}/pipelines/nodes-unified`);
   }
 
   getReachableNodes(nodeId: NodeId, maxCost: number): Observable<ReachableNodesResponse> {

@@ -6,6 +6,7 @@ export interface PipelineNode {
   country_code?: string | null;
   lon: number;
   lat: number;
+  node_type?: string | null;
 }
 
 export interface ReachableNode {

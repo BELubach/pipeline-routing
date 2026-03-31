@@ -4,6 +4,7 @@ import * as L from 'leaflet';
 import { PipelineNode } from '../models/pipeline-node.model';
 import { PipelineSegment, RouteResponse } from '../models/pipeline-segments';
 import { PipelineService } from '../services/pipeline.service';
+import { NodeMarkerUtil } from '../utils/node-marker.util';
 
 @Component({
   selector: 'app-pipeline-segments',
@@ -24,16 +25,18 @@ export class PipelineSegments implements OnInit, OnDestroy {
   nodes: PipelineNode[] = [];
   loading = true;
   error: string | null = null;
-  
+
   // Routing state
   private selectedNodes: { first: PipelineNode | null; second: PipelineNode | null } = {
     first: null,
     second: null
   };
   private nodeMarkers: Map<string | number, L.CircleMarker> = new Map();
+  private segmentPolylines: Map<string | number, L.Polyline> = new Map();
   private currentRoute: RouteResponse | null = null;
-
   
+
+
   ngOnInit(): void {
     this.initMap();
     this.loadSegments();
@@ -105,6 +108,7 @@ export class PipelineSegments implements OnInit, OnDestroy {
     }
 
     this.segmentsLayer.clearLayers();
+    this.segmentPolylines.clear();
 
     this.segments.forEach((segment) => {
       if (!segment.geometry?.coordinates || segment.geometry.coordinates.length < 2) {
@@ -126,6 +130,9 @@ export class PipelineSegments implements OnInit, OnDestroy {
 
       // Store segment data on polyline for later reference
       (polyline as any)._segmentData = segment;
+      
+      // Cache polyline reference
+      this.segmentPolylines.set(segment.id, polyline);
 
       polyline.bindPopup(`
         <div class="segment-popup">
@@ -173,7 +180,7 @@ export class PipelineSegments implements OnInit, OnDestroy {
       referencedNodeIds.add(segment.to_node);
     });
 
-    // Draw markers for ALL nodes with different colors
+    // Draw markers for ALL nodes with different colors based on node_type
     this.nodes.forEach((node) => {
       if (!Number.isFinite(node.lat) || !Number.isFinite(node.lon)) {
         return;
@@ -181,12 +188,8 @@ export class PipelineSegments implements OnInit, OnDestroy {
 
       const isSegmentEndpoint = referencedNodeIds.has(node.id);
 
-      const marker = L.circleMarker([node.lat, node.lon], {
+      const marker = NodeMarkerUtil.createNodeMarker(node, {
         radius: isSegmentEndpoint ? 6 : 5,
-        fillColor: isSegmentEndpoint ? '#ef4444' : '#2563eb',
-        color: '#fff',
-        weight: 2,
-        opacity: 1,
         fillOpacity: isSegmentEndpoint ? 0.9 : 0.7
       }).addTo(this.markersLayer);
 
@@ -196,14 +199,10 @@ export class PipelineSegments implements OnInit, OnDestroy {
       // Add click handler for routing
       marker.on('click', () => this.onNodeClick(node));
 
-      marker.bindPopup(`
-        <div class="node-popup">
-          <h4>${node.name}</h4>
-          <p><strong>ID:</strong> ${node.id}</p>
-          ${node.country_code ? `<p><strong>Country:</strong> ${node.country_code}</p>` : ''}
-          <p><em>${isSegmentEndpoint ? 'Segment endpoint' : 'Generic node'}</em></p>
-        </div>
-      `);
+      const nodeTypeLabel = NodeMarkerUtil.getNodeTypeLabel(node.node_type);
+      const additionalInfo = `<p><em>${isSegmentEndpoint ? 'Segment endpoint' : 'Generic node'}</em></p>`;
+      const popupContent = NodeMarkerUtil.createNodePopupContent(node, additionalInfo);
+      marker.bindPopup(popupContent);
     });
 
     console.log(`Drew ${this.nodes.length} total nodes (${referencedNodeIds.size} segment endpoints)`);
@@ -216,7 +215,6 @@ export class PipelineSegments implements OnInit, OnDestroy {
       // First node selection
       this.selectedNodes.first = node;
       this.highlightSelectedNode(node, '#fbbf24'); // Yellow/amber for first node
-      this.grayOutOtherNodes(node.id);
       console.log('First node selected:', node.id);
     } else if (!this.selectedNodes.second) {
       // Second node selection
@@ -225,11 +223,11 @@ export class PipelineSegments implements OnInit, OnDestroy {
         this.clearRouting();
         return;
       }
-      
+
       this.selectedNodes.second = node;
       this.highlightSelectedNode(node, '#22c55e'); // Green for second node
       console.log('Second node selected:', node.id);
-      
+
       // Fetch and display route
       this.fetchAndDisplayRoute();
     } else {
@@ -251,66 +249,35 @@ export class PipelineSegments implements OnInit, OnDestroy {
     }
   }
 
-  private grayOutOtherNodes(selectedNodeId: string | number): void {
-    // Gray out all segments
-    this.segmentsLayer.eachLayer((layer) => {
-      if (layer instanceof L.Polyline) {
-        layer.setStyle({
-          opacity: 0.2,
-          color: '#9ca3af'
-        });
-      }
-    });
-
-    // Gray out all other node markers
-    this.nodeMarkers.forEach((marker, nodeId) => {
-      if (nodeId !== selectedNodeId) {
-        marker.setStyle({
-          fillOpacity: 0.3,
-          opacity: 0.3
-        });
-      }
-    });
-  }
-
-  private resetNodeStyles(): void {
-    // Reset segments to original colors
-    this.segments.forEach((segment) => {
-      const color = segment.is_H_gas ? '#3b82f6' : '#10b981';
-      this.segmentsLayer.eachLayer((layer) => {
-        if (layer instanceof L.Polyline) {
-          const layerSegment = (layer as any)._segmentData;
-          if (layerSegment && layerSegment.id === segment.id) {
-            layer.setStyle({
-              color,
-              opacity: 0.7,
-              weight: 3
-            });
-          }
-        }
-      });
-    });
-
-    // Reset all node markers
-    const referencedNodeIds = new Set<string | number>();
-    this.segments.forEach((segment) => {
-      referencedNodeIds.add(segment.from_node);
-      referencedNodeIds.add(segment.to_node);
-    });
-
-    this.nodes.forEach((node) => {
-      const marker = this.nodeMarkers.get(node.id);
+  private resetSelectedNodes(): void {
+    // Only reset the two highlighted nodes back to their original appearance
+    if (this.selectedNodes.first) {
+      const firstNode = this.selectedNodes.first;
+      const isSegmentEndpoint = this.segments.some(s => s.from_node === firstNode.id || s.to_node === firstNode.id);
+      const marker = this.nodeMarkers.get(firstNode.id);
       if (marker) {
-        const isSegmentEndpoint = referencedNodeIds.has(node.id);
         marker.setStyle({
+          fillColor: NodeMarkerUtil.getNodeColor(firstNode.node_type),
           radius: isSegmentEndpoint ? 6 : 5,
-          fillColor: isSegmentEndpoint ? '#ef4444' : '#2563eb',
           fillOpacity: isSegmentEndpoint ? 0.9 : 0.7,
-          opacity: 1,
           weight: 2
         });
       }
-    });
+    }
+
+    if (this.selectedNodes.second) {
+      const secondNode = this.selectedNodes.second;
+      const isSegmentEndpoint = this.segments.some(s => s.from_node === secondNode.id || s.to_node === secondNode.id);
+      const marker = this.nodeMarkers.get(secondNode.id);
+      if (marker) {
+        marker.setStyle({
+          fillColor: NodeMarkerUtil.getNodeColor(secondNode.node_type),
+          radius: isSegmentEndpoint ? 6 : 5,
+          fillOpacity: isSegmentEndpoint ? 0.9 : 0.7,
+          weight: 2
+        });
+      }
+    }
   }
 
   private fetchAndDisplayRoute(): void {
@@ -389,14 +356,21 @@ export class PipelineSegments implements OnInit, OnDestroy {
     console.log(`Route displayed: ${route.num_segments} segments, ${route.total_distance_km} km`);
   }
 
-  private clearRouting(): void {
+  public clearRouting(): void {
+    // Reset the highlighted nodes before clearing references
+    this.resetSelectedNodes();
+    
+    // Clear the route visualization
+    this.routeLayer.clearLayers();
+    
+    // Clear state
     this.selectedNodes.first = null;
     this.selectedNodes.second = null;
     this.currentRoute = null;
-    this.routeLayer.clearLayers();
-    this.resetNodeStyles();
+    
     console.log('Routing cleared');
   }
 
 
+  
 }

@@ -4,6 +4,7 @@ import * as L from 'leaflet';
 
 import { PipelineNode, ReachableNode } from '../models/pipeline-node.model';
 import { PipelineService } from '../services/pipeline.service';
+import { NodeMarkerUtil } from '../utils/node-marker.util';
 
 interface NodeTypeFilter {
   type: string;
@@ -65,6 +66,7 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
     this.pipelineService.getNodes().subscribe({
       next: (nodes) => {
         this.nodes = nodes;
+        this.initializeNodeTypes(nodes);
         this.loading = false;
         this.changeDetectorRef.markForCheck();
         this.addMarkersToMap(nodes, true);
@@ -78,6 +80,26 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
       complete: () => {
         console.log('Observable completed');
       }
+    });
+  }
+
+  private initializeNodeTypes(nodes: PipelineNode[]): void {
+    const typeCounts = new Map<string, number>();
+    
+    nodes.forEach(node => {
+      const type = node.node_type || 'generic';
+      typeCounts.set(type, (typeCounts.get(type) || 0) + 1);
+    });
+
+    this.nodeTypes = Array.from(typeCounts.entries()).map(([type, count]) => {
+      const config = NodeMarkerUtil.getNodeTypeConfig(type);
+      return {
+        type,
+        label: config.label,
+        color: config.color,
+        selected: true,
+        count
+      };
     });
   }
 
@@ -95,8 +117,15 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
 
       this.markersLayer.clearLayers();
 
+      const selectedTypes = new Set(this.nodeTypes.filter(t => t.selected).map(t => t.type));
+
       const uniqueNodes = nodes.filter((node, index, self) => {
         if (!Number.isFinite(node.lat) || !Number.isFinite(node.lon)) {
+          return false;
+        }
+
+        const nodeType = node.node_type || 'generic';
+        if (selectedTypes.size > 0 && !selectedTypes.has(nodeType)) {
           return false;
         }
 
@@ -106,14 +135,7 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
       this.displayedNodesCount = uniqueNodes.length;
 
       uniqueNodes.forEach((node) => {
-        const marker = L.circleMarker([node.lat, node.lon], {
-          radius: 8,
-          fillColor: '#2563eb',
-          color: '#fff',
-          weight: 2,
-          opacity: 1,
-          fillOpacity: 0.85
-        }).addTo(this.markersLayer);
+        const marker = NodeMarkerUtil.createNodeMarker(node).addTo(this.markersLayer);
 
         const popupContent = this.createNodePopup(node);
         const popup = L.popup({ minWidth: 250 }).setContent(popupContent);
@@ -140,9 +162,7 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
   private createNodePopup(node: PipelineNode): HTMLElement {
     const container = document.createElement('div');
     container.className = 'node-popup';
-    container.innerHTML = `
-      <h3>${node.name}</h3>
-      ${node.country_code ? `<p><strong>Country Code:</strong> ${node.country_code}</p>` : ''}
+    const additionalContent = `
       <hr>
       <div class="reachable-section">
         <h4>Find Reachable Nodes</h4>
@@ -153,6 +173,7 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
         <div id="reachableResult-${node.id}" class="reachable-result"></div>
       </div>
     `;
+    container.innerHTML = NodeMarkerUtil.createNodePopupContent(node, additionalContent);
     return container;
   }
 
