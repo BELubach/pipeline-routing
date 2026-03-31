@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnIni
 import { FormsModule } from '@angular/forms';
 import * as L from 'leaflet';
 
-import { PipelineNode, ReachableNode } from './models/pipeline-node.model';
-import { PipelineService } from './services/pipeline.service';
+import { PipelineNode, ReachableNode } from '../models/pipeline-node.model';
+import { PipelineService } from '../services/pipeline.service';
 
 interface NodeTypeFilter {
   type: string;

@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import * as L from 'leaflet';
 
-import { BorderNode } from './models/border-node.model';
-import { PipelineService } from './services/pipeline.service';
+import { BorderNode } from '../models/border-node.model';
+import { PipelineService } from '../services/pipeline.service';
 
 @Component({
   selector: 'app-border-crossings',

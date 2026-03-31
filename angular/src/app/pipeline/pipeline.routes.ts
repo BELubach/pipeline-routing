@@ -12,15 +12,15 @@ export const PIPELINE_ROUTES: Routes = [
             },
             {
                 path: 'network',
-                loadComponent: () => import('./pipeline-map.component').then((m) => m.PipelineMapComponent)
+                loadComponent: () => import('./maps/pipeline-map.component').then((m) => m.PipelineMapComponent)
             },
             {
                 path: 'border-crossings',
-                loadComponent: () => import('./border-crossings.component').then((m) => m.BorderCrossingsComponent)
+                loadComponent: () => import('./maps/border-crossings.component').then((m) => m.BorderCrossingsComponent)
             },
             {
                 path: 'segments',
-                loadComponent: () => import('./pipeline-segments').then((m) => m.PipelineSegments)
+                loadComponent: () => import('./maps/pipeline-segments').then((m) => m.PipelineSegments)
             }
         ]
     }

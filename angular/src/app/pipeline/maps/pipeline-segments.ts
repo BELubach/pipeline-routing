@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import * as L from 'leaflet';
 
-import { PipelineNode } from './models/pipeline-node.model';
-import { PipelineSegment, RouteResponse } from './models/pipeline-segments';
-import { PipelineService } from './services/pipeline.service';
+import { PipelineNode } from '../models/pipeline-node.model';
+import { PipelineSegment, RouteResponse } from '../models/pipeline-segments';
+import { PipelineService } from '../services/pipeline.service';
 
 @Component({
   selector: 'app-pipeline-segments',
