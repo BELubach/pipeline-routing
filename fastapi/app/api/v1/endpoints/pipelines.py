@@ -14,7 +14,8 @@ from app.db.session import get_db
 from app.models.pipeline_iggielgn import GenericNode, PipelineSegment
 from app.schemas.pipeline import (
     BorderNodeDTO, 
-    GenericNodeDTO, 
+    GenericNodeDTO,
+    UnifiedNodeDTO,
     PipelineSegmentDTO,
     RouteResponse,
     RouteSegment
@@ -48,6 +49,57 @@ async def get_nodes(
         GenericNodeDTO(
             id=r.id, name=r.name,country_code=r.country_code,
             lon=float(r.lon), lat=float(r.lat),
+        )
+        for r in rows
+    ]
+
+
+@router.get("/nodes-unified", response_model=list[UnifiedNodeDTO])
+async def get_nodes_unified(
+    country: str | None = Query(
+        None, description="ISO 3166-1 alpha-2 country code"),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    List all generic nodes with type classification.
+    
+    Returns all nodes from generic_nodes table with an additional 'node_type' field:
+    - null: Standard generic node
+    - 'border': Node also exists in border_nodes (matched by coordinates)
+    - 'lng': Node also exists in lng_terminals (matched by coordinates)
+    
+    Uses efficient LEFT JOINs on geometry to avoid N+1 queries.
+    """
+    result = await db.execute(
+        text("""
+            SELECT 
+                gn.id,
+                gn.name,
+                gn.country_code,
+                ST_X(gn.geom) AS lon,
+                ST_Y(gn.geom) AS lat,
+                CASE 
+                    WHEN lt.id IS NOT NULL THEN 'lng'
+                    WHEN bn.id IS NOT NULL THEN 'border'
+                    ELSE NULL
+                END AS node_type
+            FROM generic_nodes gn
+            LEFT JOIN lng_terminals lt ON ST_Equals(gn.geom, lt.geom)
+            LEFT JOIN border_nodes bn ON ST_Equals(gn.geom, bn.geom)
+            WHERE (CAST(:country AS text) IS NULL OR gn.country_code = CAST(:country AS text))
+            ORDER BY gn.name
+        """),
+        {"country": country}
+    )
+    rows = result.fetchall()
+    return [
+        UnifiedNodeDTO(
+            id=r.id,
+            name=r.name,
+            country_code=r.country_code,
+            lon=float(r.lon),
+            lat=float(r.lat),
+            node_type=r.node_type,
         )
         for r in rows
     ]

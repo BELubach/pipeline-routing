@@ -22,6 +22,13 @@ class GenericNodeDTO(Node):
     country_code: Optional[str] = None
 
 
+class UnifiedNodeDTO(Node):
+    """Unified node with type classification (null, 'border', or 'lng')"""
+    name: Optional[str] = None
+    country_code: Optional[str] = None
+    node_type: Optional[str] = None  
+
+
 class Segment(BaseModel):
     id: int
     from_node: Optional[int] = None 

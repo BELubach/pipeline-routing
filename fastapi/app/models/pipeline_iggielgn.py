@@ -83,3 +83,28 @@ class PipelineSegment(Base):
     
     def __repr__(self):
         return f"<PipelineSegment(id={self.id}, from={self.from_node_id}, to={self.to_node_id})>"
+
+
+
+class LngTerminal(Base):
+    """
+    Represents an LNG terminal, which can be a source or sink in the network.
+    Derived from point features in the dataset with specific attributes.
+    """
+    __tablename__ = "lng_terminals"
+
+    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
+    IGGIELGN_id = Column(String, nullable=False)                            # e.g., "INET_LNG_0"
+    name = Column(String, nullable=True)                                    # e.g., "Zeebrugge_[209]"
+    geom = Column(Geometry("POINT", srid=4326), nullable=False)             # PostGIS geometry
+    country_code = Column(String, nullable=False)                           # Country where terminal is located
+    max_cap_store2pipe_M_m3_per_d = Column(Numeric(10, 2), nullable=True)   # Terminal capacity
+    start_year = Column(Integer, nullable=True)                             # Year terminal started operation
+    from_TSO = Column(String, nullable=True)                                # TSO that supplies the terminal
+    to_TSO = Column(String, nullable=True)                                  # TSO that receives from the terminal
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    def __repr__(self):
+        return f"<LngTerminal(id={self.id}, name={self.name}, country={self.country_code})>"
