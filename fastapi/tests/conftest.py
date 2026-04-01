@@ -2,18 +2,21 @@
 Pytest configuration and fixtures for integration tests
 """
 import asyncio
+import os
 from typing import AsyncGenerator, Generator
 import pytest
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.main import app
-from app.db.session import get_db, Base
-
 
 # Use SQLite in-memory database for testing (non-PostGIS operations)
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+
+os.environ["DATABASE_URL_OVERRIDE"] = TEST_DATABASE_URL
+
+from app.main import app
+from app.db.session import get_db, Base
 
 
 @pytest.fixture(scope="session")
@@ -24,7 +27,7 @@ def event_loop() -> Generator:
     loop.close()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 async def test_engine():
     """Create SQLite in-memory test database engine (non-spatial tables only)"""
     from app.models.user import User
@@ -50,14 +53,6 @@ async def test_engine():
 @pytest.fixture
 async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
     """Create a new database session for a test with proper transaction isolation"""
-    async_session = async_sessionmaker(
-        test_engine,
-        class_=AsyncSession,
-        expire_on_commit=False,
-        autocommit=False,
-        autoflush=False,
-    )
-    
     # Start a transaction
     connection = await test_engine.connect()
     transaction = await connection.begin()

@@ -5,6 +5,14 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from sqlalchemy.orm import declarative_base, sessionmaker
 from app.core.config import settings
 
+
+def _build_sync_database_url(database_url: str) -> str:
+    if database_url.startswith("postgresql+asyncpg://"):
+        return database_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://", 1)
+    if database_url.startswith("sqlite+aiosqlite://"):
+        return database_url.replace("sqlite+aiosqlite://", "sqlite://", 1)
+    return database_url
+
 # Create async engine
 engine = create_async_engine(
     settings.DATABASE_URL,
@@ -22,8 +30,7 @@ AsyncSessionLocal = async_sessionmaker(
 )
 
 # Create synchronous engine for batch operations
-# Convert postgresql+asyncpg:// to postgresql+psycopg2://
-sync_db_url = settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
+sync_db_url = _build_sync_database_url(settings.DATABASE_URL)
 sync_engine = create_engine(
     sync_db_url,
     echo=False,  # Less verbose for batch operations
