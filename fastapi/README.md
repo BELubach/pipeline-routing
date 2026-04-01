@@ -503,7 +503,6 @@ async def owner_or_admin(
 |----------|-------------|---------|
 | `PROJECT_NAME` | Application name | FastAPI App |
 | `VERSION` | API version | 1.0.0 |
-| `API_V1_STR` | API v1 path prefix | /api/v1 |
 | `SECRET_KEY` | JWT secret key | **Required** |
 | `ALGORITHM` | JWT algorithm | HS256 |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Access token expiration | 30 |
