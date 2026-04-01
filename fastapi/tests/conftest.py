@@ -2,21 +2,17 @@
 Pytest configuration and fixtures for integration tests
 """
 import asyncio
-import os
 from typing import AsyncGenerator, Generator
 import pytest
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.pool import StaticPool
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
-# Use SQLite in-memory database for testing (non-PostGIS operations)
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
-
-os.environ["DATABASE_URL_OVERRIDE"] = TEST_DATABASE_URL
-
-from app.main import app
-from app.db.session import get_db, Base
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers",
+        "e2e: end-to-end tests that require the Docker-backed database",
+    )
 
 
 @pytest.fixture(scope="session")
@@ -25,70 +21,6 @@ def event_loop() -> Generator:
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
-
-
-@pytest.fixture
-async def test_engine():
-    """Create SQLite in-memory test database engine (non-spatial tables only)"""
-    from app.models.user import User
-    
-    engine = create_async_engine(
-        TEST_DATABASE_URL,
-        echo=False,
-        poolclass=StaticPool,
-        connect_args={"check_same_thread": False},
-    )
-    
-    # Only create non-spatial tables (User table doesn't have PostGIS dependencies)
-    # Plant and Pipeline tables require PostGIS, so we'll mock those operations
-    async with engine.begin() as conn:
-        await conn.run_sync(User.__table__.create, checkfirst=True)
-    
-    yield engine
-    
-    # Clean up
-    await engine.dispose()
-
-
-@pytest.fixture
-async def db_session(test_engine) -> AsyncGenerator[AsyncSession, None]:
-    """Create a new database session for a test with proper transaction isolation"""
-    # Start a transaction
-    connection = await test_engine.connect()
-    transaction = await connection.begin()
-    
-    # Create session bound to the transaction
-    session = async_sessionmaker(
-        bind=connection,
-        class_=AsyncSession,
-        expire_on_commit=False,
-        join_transaction_mode="create_savepoint"
-    )()
-    
-    yield session
-    
-    # Rollback transaction to clean up
-    await session.close()
-    await transaction.rollback()
-    await connection.close()
-
-
-@pytest.fixture
-async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
-    """Create an async HTTP client for testing"""
-    
-    async def override_get_db():
-        yield db_session
-    
-    app.dependency_overrides[get_db] = override_get_db
-    
-    async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://test"
-    ) as ac:
-        yield ac
-    
-    app.dependency_overrides.clear()
 
 
 @pytest.fixture
