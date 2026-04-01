@@ -4,14 +4,8 @@ GET http://localhost:8000/api/v1/pipelines/route/INET_PL_273_Node_1/INET_PL_273_
 ### 
 GET http://localhost:8000/api/v1/pipelines/segments
 
-
-
 ### 
 GET http://localhost:8000/api/v1/pipelines/nodes-unified
-
-
-
-
 
 ### 
 GET http://localhost:8000/api/v1/pipelines/nodes

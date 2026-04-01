@@ -15,7 +15,7 @@ from app.crud import crud_user
 
 router = APIRouter()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"/v1/auth/login")
 
 
 async def get_current_user(

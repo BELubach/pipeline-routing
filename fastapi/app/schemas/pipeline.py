@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
+from app.schemas.metadata import ResponseMetadata
 
 
 
@@ -60,3 +61,29 @@ class RouteResponse(BaseModel):
     total_distance_km: float
     num_segments: int
     path: list[RouteSegment]
+    metadata: ResponseMetadata
+
+
+# List responses with metadata
+class NodesResponse(BaseModel):
+    """Response containing nodes with metadata"""
+    data: list[GenericNodeDTO]
+    metadata: ResponseMetadata
+
+
+class UnifiedNodesResponse(BaseModel):
+    """Response containing unified nodes with metadata"""
+    data: list[UnifiedNodeDTO]
+    metadata: ResponseMetadata
+
+
+class BorderNodesResponse(BaseModel):
+    """Response containing border nodes with metadata"""
+    data: list[BorderNodeDTO]
+    metadata: ResponseMetadata
+
+
+class SegmentsResponse(BaseModel):
+    """Response containing pipeline segments with metadata"""
+    data: list[PipelineSegmentDTO]
+    metadata: ResponseMetadata

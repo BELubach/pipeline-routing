@@ -6,7 +6,7 @@ from app.api.v1.api import api_router
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+    openapi_url=f"/openapi.json"
 )
 
 # Set up CORS
@@ -19,7 +19,7 @@ app.add_middleware(
 )
 
 # Include API router
-app.include_router(api_router, prefix=settings.API_V1_STR)
+app.include_router(api_router, prefix="/api/v1")
 
 
 @app.get("/")
@@ -28,7 +28,7 @@ async def root():
     return {
         "message": "FastAPI Application",
         "version": settings.VERSION,
-        "docs": f"{settings.API_V1_STR}/docs"
+        "docs": f"/docs",
     }
 
 
