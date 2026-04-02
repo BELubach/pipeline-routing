@@ -1,6 +1,16 @@
 from app.db.session import Base
+from app.models.pipeline_GEM import GEMPipelineSegment
+from app.models.pipeline_iggielgn import BorderNode, GenericNode, LngTerminal, PipelineSegment
 from app.models.user import User
-from app.models.pipeline_iggielgn import BorderNode
 
-# Add all models here
-__all__ = ["Base", "User", "BorderNode"]
+__all__ = [
+	"Base",
+	"User",
+	"BorderNode",
+	"GenericNode",
+	"PipelineSegment",
+	"LngTerminal",
+	"GEMPipelineSegment",
+]
+
+

@@ -30,11 +30,44 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 target_metadata = Base.metadata
 
-# ---  filter to skip GIS/PostGIS system tables ---
+SPRING_BATCH_TABLES = {
+    "batch_job_execution",
+    "batch_job_execution_context",
+    "batch_job_execution_params",
+    "batch_job_instance",
+    "batch_step_execution",
+    "batch_step_execution_context",
+}
+
+SPRING_BATCH_PREFIXES = (
+    "batch_job_",
+    "batch_step_",
+    "job_exec_",
+    "job_inst_",
+    "step_exec_",
+)
+
+
+def should_skip_object(name, type_):
+    if not name:
+        return False
+
+    if type_ == "table" and name in SPRING_BATCH_TABLES:
+        return True
+
+    if type_ in {"index", "sequence", "table", "primary_key_constraint", "foreign_key_constraint", "unique_constraint"}:
+        return name.startswith(SPRING_BATCH_PREFIXES)
+
+    return False
+
+
 def include_object(object, name, type_, reflected, compare_to):
     """
-    Skip PostGIS/system tables from migrations.
+    Skip PostGIS/system tables and externally managed Spring Batch objects.
     """
+    if should_skip_object(name, type_):
+        return False
+
     if type_ == "table":
         if name in ("spatial_ref_sys", "topology", "layer"):
             return False
