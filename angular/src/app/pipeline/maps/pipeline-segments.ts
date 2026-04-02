@@ -69,7 +69,6 @@ export class PipelineSegments implements OnInit, OnDestroy {
       next: (segments) => {
         this.segments = segments;
         this.loadNodes();
-        console.log('Loaded segments:', segments.length);
       },
       error: (err) => {
         console.error('Error loading segments:', err);

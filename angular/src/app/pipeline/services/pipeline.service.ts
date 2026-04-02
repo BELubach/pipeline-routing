@@ -1,7 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
-
+import { Observable, map } from 'rxjs';
 import { BorderNode } from '../models/border-node.model';
 import { NodeId, PipelineNode, ReachableNodesResponse } from '../models/pipeline-node.model';
 import { PipelineSegment, RouteResponse } from '../models/pipeline-segments';
@@ -14,27 +13,30 @@ export class PipelineService {
   private readonly apiUrl = '/api/v1';
 
   getNodes(): Observable<PipelineNode[]> {
-    return this.http.get<PipelineNode[]>(`${this.apiUrl}/pipelines/nodes-unified`);
+    return this.http.get<{ metadata: any; data: PipelineNode[] }>(`${this.apiUrl}/pipelines/nodes-unified`)
+      .pipe(map(res => res.data));
   }
 
-  getReachableNodes(nodeId: NodeId, maxCost: number): Observable<ReachableNodesResponse> {
-    return this.http.get<ReachableNodesResponse>(
-      `${this.apiUrl}/pipelines/nodes/${nodeId}/reachable?max_cost=${maxCost}`
-    );
-  }
 
   getBorderCrossings(): Observable<BorderNode[]> {
     return this.http.get<BorderNode[]>(`${this.apiUrl}/pipelines/border-crossings`);
   }
 
   getPipelineSegments(): Observable<PipelineSegment[]> {
-    return this.http.get<PipelineSegment[]>(`${this.apiUrl}/pipelines/segments`);
+    return this.http
+      .get<{ metadata: any; data: PipelineSegment[] }>(`${this.apiUrl}/pipelines/segments`)
+      .pipe(map(res => res.data));
   }
 
   getRoute(sourceNodeId: NodeId, targetNodeId: NodeId): Observable<RouteResponse> {
-    return this.http.get<RouteResponse>(
-      `${this.apiUrl}/pipelines/route/${sourceNodeId}/${targetNodeId}`
-    );
+    return this.http
+      .get<{
+        metadata: any;
+        data: RouteResponse;
+      }>(
+        `${this.apiUrl}/pipelines/route/${sourceNodeId}/${targetNodeId}`
+      )
+      .pipe(map(res => res.data));
   }
 }
 

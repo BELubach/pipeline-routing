@@ -183,40 +183,7 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
     const maxCostInput = document.getElementById(`maxCost-${node.id}`) as HTMLInputElement | null;
     const resultDiv = document.getElementById(`reachableResult-${node.id}`);
 
-    if (findButton && maxCostInput && resultDiv) {
-      findButton.addEventListener('click', () => {
-        const maxCost = Number.parseFloat(maxCostInput.value);
-        if (maxCost > 0) {
-          this.findReachableNodes(node, maxCost, resultDiv);
-        }
-      });
-    }
-
-    if (clearButton) {
-      clearButton.addEventListener('click', () => {
-        this.clearReachableNodes();
-        if (resultDiv) {
-          resultDiv.innerHTML = '';
-        }
-      });
-    }
-  }
-
-  private findReachableNodes(sourceNode: PipelineNode, maxCost: number, resultDiv: HTMLElement): void {
-    resultDiv.innerHTML = '<p class="loading-text">Loading...</p>';
-
-    this.pipelineService.getReachableNodes(sourceNode.id, maxCost).subscribe({
-      next: (response) => {
-        this.visualizeReachableNodes(sourceNode, response.nodes);
-        resultDiv.innerHTML = `
-          <p class="success-text">Found ${response.reachable_count} reachable nodes</p>
-        `;
-      },
-      error: (err) => {
-        console.error('Error fetching reachable nodes:', err);
-        resultDiv.innerHTML = `<p class="error-text">Error: ${err.message || 'Failed to load'}</p>`;
-      }
-    });
+   
   }
 
   private visualizeReachableNodes(sourceNode: PipelineNode, reachableNodes: ReachableNode[]): void {
