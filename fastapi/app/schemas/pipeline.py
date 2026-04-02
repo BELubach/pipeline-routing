@@ -1,5 +1,7 @@
+from datetime import date
+from typing import Any, Optional
+
 from pydantic import BaseModel
-from typing import Optional
 from app.schemas.metadata import ResponseMetadata
 
 
@@ -45,6 +47,46 @@ class PipelineSegmentDTO(Segment):
     geometry: dict | None = None
 
 
+class GEMPipelineSegmentDTO(Segment):
+    project_id: str
+    pipeline_name: str
+    segment_name: Optional[str] = None
+    wiki: Optional[str] = None
+    status: Optional[str] = None
+    last_updated: Optional[date] = None
+    fuel: Optional[str] = None
+    countries_or_areas: Optional[str] = None
+    owner: Optional[str] = None
+    parent: Optional[str] = None
+    parent_entity_ids: Optional[list[str]] = None
+    start_year_1: Optional[int] = None
+    start_year_2: Optional[int] = None
+    start_year_3: Optional[int] = None
+    shelved_year: Optional[int] = None
+    cancelled_year: Optional[int] = None
+    stop_year: Optional[int] = None
+    capacity: Optional[float] = None
+    capacity_units: Optional[str] = None
+    capacity_bcm_y: Optional[float] = None
+    capacity_boe_d: Optional[float] = None
+    length_known_km: Optional[float] = None
+    length_estimate_km: Optional[float] = None
+    length_merged_km: Optional[float] = None
+    diameter_raw: Optional[str] = None
+    diameter_units: Optional[str] = None
+    start_country_or_area: Optional[str] = None
+    start_state_province: Optional[str] = None
+    start_prefecture_district: Optional[str] = None
+    end_location: Optional[str] = None
+    end_country_or_area: Optional[str] = None
+    end_state_province: Optional[str] = None
+    end_prefecture_district: Optional[str] = None
+    route_accuracy: Optional[str] = None
+    route_type: Optional[str] = None
+    raw_properties: Any = None
+    geometry: dict | None = None
+
+
 class RouteSegment(BaseModel):
     """A segment in a route path"""
     segment_id: int
@@ -86,4 +128,10 @@ class BorderNodesResponse(BaseModel):
 class SegmentsResponse(BaseModel):
     """Response containing pipeline segments with metadata"""
     data: list[PipelineSegmentDTO]
+    metadata: ResponseMetadata
+
+
+class GEMSegmentsResponse(BaseModel):
+    """Response containing GEM pipeline segments with metadata"""
+    data: list[GEMPipelineSegmentDTO]
     metadata: ResponseMetadata
