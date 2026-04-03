@@ -47,7 +47,7 @@ class PipelineSegmentDTO(Segment):
     geometry: dict | None = None
 
 
-class GEMPipelineSegmentDTO(Segment):
+class GEMPipelineDTO(Segment):
     project_id: str
     pipeline_name: str
     segment_name: Optional[str] = None
@@ -84,8 +84,12 @@ class GEMPipelineSegmentDTO(Segment):
     route_accuracy: Optional[str] = None
     route_type: Optional[str] = None
     raw_properties: Any = None
-    geometry: dict | None = None
 
+class GEMRouteSegment(BaseModel): 
+    id: int
+    pipeline_name: str
+    geometry: dict | None = None
+    length_km: Optional[float] = None
 
 class RouteSegment(BaseModel):
     """A segment in a route path"""
@@ -133,5 +137,10 @@ class SegmentsResponse(BaseModel):
 
 class GEMSegmentsResponse(BaseModel):
     """Response containing GEM pipeline segments with metadata"""
-    data: list[GEMPipelineSegmentDTO]
+    data: list[GEMRouteSegment]
+    metadata: ResponseMetadata
+
+class GEMPipelinesResponse(BaseModel):
+    """Response containing GEM pipeline details with metadata"""
+    data: list[GEMPipelineDTO]
     metadata: ResponseMetadata
