@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import * as L from 'leaflet';
 
 import { PipelineNode, ReachableNode } from '../models/pipeline-node.model';
+import { GemPipelineSegment, PipelineSegment } from '../models/pipeline-segments';
 import { PipelineService } from '../services/pipeline.service';
 import { NodeMarkerUtil } from '../utils/node-marker.util';
 
@@ -34,9 +35,103 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
   loading = true;
   error: string | null = null;
 
+  // Pipeline segment datasets and toggles
+  iggielgnSegments: PipelineSegment[] = [];
+  gemSegments: GemPipelineSegment[] = [];
+  showIggielgnSegments = true;
+  showGemSegments = true;
+
   ngOnInit(): void {
     this.initMap();
     this.loadNodes();
+    this.loadPipelineSegments();
+  }
+  private loadPipelineSegments(): void {
+    this.loading = true;
+    this.pipelineService.getPipelineSegments().subscribe({
+      next: (segments) => {
+        this.iggielgnSegments = segments;
+        this.loading = false;
+        this.updateSegmentsDisplay();
+        this.changeDetectorRef.markForCheck();
+      },
+      error: (err) => {
+        this.error = `Failed to load IGGIELGN segments: ${err.message || err.status || 'Unknown error'}`;
+        this.loading = false;
+        this.changeDetectorRef.markForCheck();
+      }
+    });
+    this.pipelineService.getGemSegments().subscribe({
+      next: (segments) => {
+        this.gemSegments = segments;
+        this.updateSegmentsDisplay();
+        this.changeDetectorRef.markForCheck();
+      },
+      error: (err) => {
+        this.error = `Failed to load GEM segments: ${err.message || err.status || 'Unknown error'}`;
+        this.changeDetectorRef.markForCheck();
+      }
+    });
+  }
+
+  onToggleIggielgnSegments(): void {
+    this.showIggielgnSegments = !this.showIggielgnSegments;
+    this.updateSegmentsDisplay();
+  }
+
+  onToggleGemSegments(): void {
+    this.showGemSegments = !this.showGemSegments;
+    this.updateSegmentsDisplay();
+  }
+
+  private updateSegmentsDisplay(): void {
+    // Remove old segment layers if any
+    if (!this.map) return;
+    // Remove previous segment layers
+    this.map.eachLayer((layer: any) => {
+      if (layer.options && layer.options.pane === 'overlayPane' && layer instanceof L.Polyline && !(layer instanceof L.Polygon)) {
+        this.map?.removeLayer(layer);
+      }
+    });
+    // Add IGGIELGN segments
+    if (this.showIggielgnSegments && this.iggielgnSegments.length > 0) {
+      this.iggielgnSegments.forEach(segment => {
+        this.drawLineString(segment.geometry.coordinates, {
+          color: '#0074D9',
+          weight: 4,
+          opacity: 0.7
+        });
+      });
+    }
+    // Add GEM segments
+    if (this.showGemSegments && this.gemSegments.length > 0) {
+      this.gemSegments.forEach(segment => {
+        this.drawMultiLineString(segment.geometry.coordinates, {
+          color: '#FF4136',
+          weight: 4,
+          opacity: 0.7,
+          dashArray: '8, 8'
+        });
+      });
+    }
+  }
+
+  private drawLineString(coordinates: [number, number][] | null | undefined, style: L.PolylineOptions): void {
+    if (!this.map || !coordinates) {
+      return;
+    }
+
+    L.polyline(coordinates.map(([lon, lat]) => [lat, lon] as [number, number]), style).addTo(this.map);
+  }
+
+  private drawMultiLineString(coordinates: [number, number][][] | null | undefined, style: L.PolylineOptions): void {
+    if (!this.map || !coordinates) {
+      return;
+    }
+
+    coordinates.forEach(line => {
+      L.polyline(line.map(([lon, lat]) => [lat, lon] as [number, number]), style).addTo(this.map!);
+    });
   }
 
   ngOnDestroy(): void {

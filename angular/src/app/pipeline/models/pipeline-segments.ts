@@ -15,6 +15,15 @@ export interface PipelineSegment {
   };
 }
 
+export interface GemPipelineSegment {
+  id: number;
+  pipeline_name: string;
+  geometry: {
+    type: 'MultiLineString';
+    coordinates: [number, number][][];
+  };
+}
+
 export interface RouteSegment {
   segment_id: number;
   from_node_id: NodeId;
