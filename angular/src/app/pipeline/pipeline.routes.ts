@@ -21,6 +21,10 @@ export const PIPELINE_ROUTES: Routes = [
             {
                 path: 'segments',
                 loadComponent: () => import('./maps/pipeline-segments').then((m) => m.PipelineSegments)
+            },
+            {
+                path: 'gem-segments',
+                loadComponent: () => import('./maps/gem-pipeline-segments.component').then((m) => m.PipelineMapComponent)
             }
         ]
     }
