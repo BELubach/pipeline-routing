@@ -2,36 +2,6 @@
 
 A production-ready FastAPI application with user authentication (JWT), PostgreSQL database with PostGIS support, and Alembic migrations.
 
-## ⚡ Quick Start (with Docker)
-
-```bash
-# 1. Clone and navigate to project
-cd fastapi
-
-# 2. Create virtual environment and install dependencies
-python -m venv .venv
-.venv\Scripts\activate  # Windows
-# source .venv/bin/activate  # Linux/Mac
-pip install -r requirements.txt
-
-# 3. Copy environment file and update SECRET_KEY
-copy .env.example .env  # Windows
-# cp .env.example .env  # Linux/Mac
-
-# 4. Start PostgreSQL with PostGIS
-docker-compose up -d
-
-# 5. Run database migrations
-alembic revision --autogenerate -m "Initial migration"
-alembic upgrade head
-
-# 6. Start the application
-uvicorn app.main:app --reload
-
-# 7. Open your browser
-# API Docs: http://localhost:8000/api/v1/docs
-```
-
 ## Project Structure
 
 ```
@@ -76,160 +46,45 @@ fastapi/
 └── README.md                        # This file
 ```
 
-## 📋 Prerequisites
+## Prerequisites
 
-- Python 3.10+
-- Docker & Docker Compose (recommended) **OR** PostgreSQL 14+ with PostGIS
+- Python 3.14+
+- Docker & Docker Compose (recommended) **OR** PostgreSQL 16+ with PostGIS
 - pip and virtualenv
 
-## 🚀 Installation & Setup
 
-### 1. Clone the Repository
+## Quick Start (with Docker)
 
-```bash
-git clone <your-repository-url>
-cd fastapi
+
+
+
+### start docker database with PostGIS
 ```
-
-### 2. Create Virtual Environment
-
-```bash
-python -m venv .venv
-
-# Windows
-.venv\Scripts\activate
-
-# Linux/Mac
-source .venv/bin/activate
-```
-
-### 3. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Set Up Environment Variables
-
-Copy the example environment file and configure it:
-
-```bash
-# Windows
-copy .env.example .env
-
-# Linux/Mac
-cp .env.example .env
-```
-
-Edit `.env` and update the following variables:
-
-```env
-# Generate a secure secret key (run: openssl rand -hex 32)
-SECRET_KEY=secret-key-here
-
-# Database credentials
-POSTGRES_USER=your_db_user
-POSTGRES_PASSWORD=your_db_password
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5433
-POSTGRES_DB=your_database_name
-```
-
-### 5. Set Up PostgreSQL Database
-
-```bash
-# Start PostgreSQL with PostGIS
 docker-compose up -d
 
-# Check if the database is running
-docker-compose ps
-
-# View logs
-docker-compose logs -f postgres
-
-# Stop the database
-docker-compose down
-
-# Stop and remove all data (caution: destroys all data)
-docker-compose down -v
-```
-
-**Optional: PgAdmin**
-
-The Docker Compose file includes PgAdmin for database management. To start it:
-
-```bash
-# Start PostgreSQL with PgAdmin
-docker-compose --profile tools up -d
-
-# Access PgAdmin at: http://localhost:5050
-# Email: admin@admin.com
-# Password: admin
-```
-
-To connect to the database in PgAdmin:
-- Host: postgres (or localhost if connecting from outside Docker)
-- Port: 5433 (Docker host port, or 5432 if inside Docker network)
-- Database: fastapi_db (or your POSTGRES_DB)
-- Username: postgres (or your POSTGRES_USER)
-- Password: postgres (or your POSTGRES_PASSWORD)
-
-**Note:** The Docker PostgreSQL uses port **5433** on your host machine to avoid conflicts with any local PostgreSQL installation on port 5432.
-
-```
-uvicorn app.main:app --reload
-```
-
-## Database Migrations with Alembic
-
-### Running Initial Migration
-
-After setting up your database and environment variables:
-
-#### 1. Create Initial Migration
-
-Generate the first migration based on your models:
-
-```bash
-alembic revision --autogenerate -m "Initial migration with user model"
-```
-
-This will create a new migration file in `alembic/versions/` directory.
-
-#### 2. Apply Migration to Database
-
-Run the migration to create tables in your database:
-
-```bash
 alembic upgrade head
-```
+``` 
 
-### Common Alembic Commands
 
+
+### Run Fastapi app 
 ```bash
-# Show current database version
-alembic current
+# Clone and navigate to project
+cd fastapi
 
-# Show migration history
-alembic history
+# Create virtual environment and install dependencies
+python -m venv .venv
+.venv\Scripts\activate  # Windows
+# source .venv/bin/activate  # Linux/Mac
+pip install -r requirements.txt
 
-# Upgrade to specific version
-alembic upgrade <revision_id>
+# Copy environment file and update SECRET_KEY
+copy .env.example .env  # Windows
+# cp .env.example .env  # Linux/Mac
+uvicorn app.main:app --reload
 
-# Downgrade one version
-alembic downgrade -1
-
-# Downgrade to specific version
-alembic downgrade <revision_id>
-
-# Downgrade all migrations (back to empty database)
-alembic downgrade base
-
-# Create empty migration (manual changes)
-alembic revision -m "Description of changes"
-
-# Generate SQL without applying (dry run)
-alembic upgrade head --sql
+# Open your browser
+# API Docs: http://localhost:8000/api/v1/docs
 ```
 
 
@@ -252,23 +107,6 @@ This creates:
 - Tariff rules seed data
 
 ### 5Import Pipeline Data
-
-#### Seed Known Nodes Only (Quick Start)
-
-```bash
-python manage.py import-pipelines
-```
-
-This imports ~50 well-known hubs, LNG terminals, and border crossings.
-
-
-
-then go to https://globalenergymonitor.org/projects/global-gas-infrastructure-tracker/
-and download the geojson data and put it in the ./data folder
-```
-
-python manage.py import-pipelines --geojson ./data/GEM-GGIT-Gas-Pipelines-2025-11.geojson
-```
 
 
 ## Running the Application
