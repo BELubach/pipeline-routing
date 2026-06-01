@@ -4,7 +4,7 @@ Dataset metadata schemas for proper attribution and licensing
 
 from datetime import date, datetime
 from typing import Optional, Any
-from pydantic import BaseModel, HttpUrl, Field
+from pydantic import BaseModel, HttpUrl, Field, ConfigDict
 
 
 class ResponseMetadata(BaseModel):
@@ -27,20 +27,19 @@ class ResponseMetadata(BaseModel):
     dataset_url: Optional[HttpUrl] = Field(None, description="Dataset website")
     documentation_url: Optional[HttpUrl] = Field(None, description="Documentation URL")
     
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "dataset_id": "iggielgn",
-                "dataset_name": "IGGIELGN Gas Network Dataset",
-                "source": "SciGRID_gas",
-                "organization": "Institute of Networked Energy Systems, DLR",
-                "license": "ODbL-1.0",
-                "attribution": "SciGRID_gas IGGIELGN, DLR",
-                "record_count": 150,
-                "timestamp": "2026-03-31T12:00:00Z",
-                "filters_applied": {"country": "DE"}
-            }
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "dataset_id": "iggielgn",
+            "dataset_name": "IGGIELGN Gas Network Dataset",
+            "source": "SciGRID_gas",
+            "organization": "Institute of Networked Energy Systems, DLR",
+            "license": "ODbL-1.0",
+            "attribution": "SciGRID_gas IGGIELGN, DLR",
+            "record_count": 150,
+            "timestamp": "2026-03-31T12:00:00Z",
+            "filters_applied": {"country": "DE"}
         }
+    })
 
 
 class DatasetMetadata(BaseModel):
@@ -68,25 +67,24 @@ class DatasetMetadata(BaseModel):
     geographic_coverage: Optional[str] = Field(None, description="Geographic coverage (e.g., 'European Union', 'Global')")
     data_types: Optional[list[str]] = Field(None, description="Types of data provided (e.g., nodes, pipelines, terminals)")
     
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "id": "iggielgn",
-                "name": "IGGIELGN Gas Network Dataset",
-                "source": "SciGRID_gas",
-                "organization": "Institute of Networked Energy Systems, DLR",
-                "version": "v0.4",
-                "dataset_date": "2021-03-15",
-                "license": "ODbL-1.0",
-                "license_url": "https://opendatacommons.org/licenses/odbl/1.0/",
-                "attribution": "SciGRID_gas, Institute of Networked Energy Systems, German Aerospace Center (DLR)",
-                "website": "https://www.gas.scigrid.de/",
-                "documentation_url": "https://www.gas.scigrid.de/downloads/scigrid_gas_IGGIELGN_2019-10-22.pdf",
-                "description": "High-resolution model of the European gas transmission network",
-                "geographic_coverage": "European Union",
-                "data_types": ["pipelines", "nodes", "border_crossings", "lng_terminals"]
-            }
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "id": "iggielgn",
+            "name": "IGGIELGN Gas Network Dataset",
+            "source": "SciGRID_gas",
+            "organization": "Institute of Networked Energy Systems, DLR",
+            "version": "v0.4",
+            "dataset_date": "2021-03-15",
+            "license": "ODbL-1.0",
+            "license_url": "https://opendatacommons.org/licenses/odbl/1.0/",
+            "attribution": "SciGRID_gas, Institute of Networked Energy Systems, German Aerospace Center (DLR)",
+            "website": "https://www.gas.scigrid.de/",
+            "documentation_url": "https://www.gas.scigrid.de/downloads/scigrid_gas_IGGIELGN_2019-10-22.pdf",
+            "description": "High-resolution model of the European gas transmission network",
+            "geographic_coverage": "European Union",
+            "data_types": ["pipelines", "nodes", "border_crossings", "lng_terminals"]
         }
+    })
 
 
 class DatasetResponse(BaseModel):
@@ -94,16 +92,15 @@ class DatasetResponse(BaseModel):
     
     datasets: list[DatasetMetadata] = Field(..., description="List of all datasets used in the API")
     
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "datasets": [
-                    {
-                        "id": "iggielgn",
-                        "name": "IGGIELGN Gas Network Dataset",
-                        "source": "SciGRID_gas",
-                        "organization": "Institute of Networked Energy Systems, DLR"
-                    }
-                ]
-            }
+    model_config = ConfigDict(json_schema_extra={
+        "example": {
+            "datasets": [
+                {
+                    "id": "iggielgn",
+                    "name": "IGGIELGN Gas Network Dataset",
+                    "source": "SciGRID_gas",
+                    "organization": "Institute of Networked Energy Systems, DLR"
+                }
+            ]
         }
+    })
