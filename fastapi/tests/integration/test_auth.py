@@ -10,6 +10,72 @@ from app.crud import crud_user
 from app.schemas.user import UserCreate
 
 
+@pytest.fixture
+async def auth_headers(client: AsyncClient, db_session: AsyncSession) -> dict:
+    """Create authenticated user and return authorization headers"""
+    from app.crud import crud_user
+    from app.schemas.user import UserCreate
+    
+    # Try to get existing user first
+    existing_user = await crud_user.get_user_by_email(db_session, email="test@example.com")
+    
+    if not existing_user:
+        # Create test user
+        user_in = UserCreate(
+            email="test@example.com",
+            password="testpass123",
+            role="COMPANY_OWNER"
+        )
+        
+        user = await crud_user.create_user(db_session, user_in=user_in)
+        await db_session.commit()
+    
+    # Login to get token
+    response = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "test@example.com", "password": "testpass123"}
+    )
+    
+    assert response.status_code == 200
+    token_data = response.json()
+    
+    return {"Authorization": f"Bearer {token_data['access_token']}"}
+
+
+@pytest.fixture
+async def superuser_headers(client: AsyncClient, db_session: AsyncSession) -> dict:
+    """Create superuser and return authorization headers"""
+    from app.crud import crud_user
+    from app.schemas.user import UserCreate
+    
+    # Try to get existing user first
+    existing_user = await crud_user.get_user_by_email(db_session, email="admin@example.com")
+    
+    if not existing_user:
+        # Create test superuser
+        user_in = UserCreate(
+            email="admin@example.com",
+            password="adminpass123",
+            role="CLUSTER_ADMIN",
+            is_superuser=True
+        )
+        
+        user = await crud_user.create_user(db_session, user_in=user_in)
+        await db_session.commit()
+    
+    # Login to get token
+    response = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "admin@example.com", "password": "adminpass123"}
+    )
+    
+    assert response.status_code == 200
+    token_data = response.json()
+    
+    return {"Authorization": f"Bearer {token_data['access_token']}"}
+
+
+
 @pytest.mark.integration
 class TestRegisterEndpoint:
     """Test the /api/v1/auth/register endpoint"""

@@ -1,10 +1,6 @@
-"""
-Integration tests for authentication endpoints
-"""
+
 import pytest
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, text
 
 
 @pytest.mark.e2e
@@ -13,8 +9,7 @@ class TestIGGIELGNEndpoints:
 
     async def test_get_generic_nodes(
         self,
-        client: AsyncClient,
-        db_session: AsyncSession
+        client: AsyncClient
     ):
         """Test getting generic nodes with limit"""
         response = await client.get(
@@ -50,7 +45,6 @@ class TestIGGIELGNEndpoints:
     async def test_get_generic_nodes_country_de(
         self,
         client: AsyncClient,
-        db_session: AsyncSession
     ):
         """Test getting generic nodes with country filter and limit"""
         response = await client.get(
@@ -86,7 +80,6 @@ class TestIGGIELGNEndpoints:
     async def test_get_unified_nodes(
         self,
         client: AsyncClient,
-        db_session: AsyncSession
     ):
         """Test getting unified nodes with country filter and limit"""
         response = await client.get(
@@ -114,7 +107,6 @@ class TestIGGIELGNEndpoints:
     async def test_get_border_crossing_nodes(
         self,
         client: AsyncClient,
-        db_session: AsyncSession
     ):
         """Test getting border crossing nodes with country filter and limit"""
         response = await client.get(
@@ -141,7 +133,6 @@ class TestIGGIELGNEndpoints:
 
 async def test_get_segments(
     client: AsyncClient,
-    db_session: AsyncSession
 ):
     """Test getting segments with country filter and limit"""
     response = await client.get(
@@ -168,7 +159,6 @@ async def test_get_segments(
 
 async def test_get_route_from_nodes(
     client: AsyncClient,
-    db_session: AsyncSession
 ):
     """Test getting route between two nodes"""
 

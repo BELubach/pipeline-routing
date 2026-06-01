@@ -13,7 +13,7 @@ SQLITE_TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 def _build_sync_database_url(database_url: str) -> str:
     if database_url.startswith("postgresql+asyncpg://"):
-        return database_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://", 1)
+        return database_url.replace("postgresql+asyncpg://", "postgresql+psycopg://", 1)
     if database_url.startswith("sqlite+aiosqlite://"):
         return database_url.replace("sqlite+aiosqlite://", "sqlite://", 1)
     return database_url
