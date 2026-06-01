@@ -9,3 +9,7 @@ GET http://localhost:8000/api/v1/nodes-unified
 
 ### 
 GET http://localhost:8000/api/v1/nodes
+
+
+### 
+GET http://localhost:8000/api/v1/routing/route/coordinates?start_lon=-122.4194&start_lat=37.7749&end_lon=-74.0060&end_lat=40.7128&allow_shipping=true
