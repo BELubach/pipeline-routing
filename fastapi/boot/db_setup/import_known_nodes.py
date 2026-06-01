@@ -1,14 +1,8 @@
 
 
-import argparse
-from pathlib import Path
 
-import geopandas as gpd
-import pandas as pd
 import psycopg2
-from shapely.geometry import LineString
 
-from boot.db_setup.import_gem_pipelines import import_geojson
 
 
 def import_known_nodes(conn):
