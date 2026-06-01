@@ -1,0 +1,15 @@
+<p-dialog
+  [header]="title()"
+  [modal]="true"
+  [visible]="visible()"
+  (visibleChange)="onVisibleChange($event)"
+  [style]="{ width: width() }">
+  <div class="modal-content">
+    <ng-content></ng-content>
+  </div>
+
+  <div class="modal-actions">
+    <p-button [label]="cancelLabel()" severity="secondary" (click)="onCancel()"></p-button>
+    <p-button [label]="confirmLabel()" (click)="onConfirm()"></p-button>
+  </div>
+</p-dialog>

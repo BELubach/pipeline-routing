@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { BorderNode } from '../models/border-node.model';
 import { NodeId, PipelineNode, ReachableNodesResponse } from '../models/pipeline-node.model';
-import { GemPipelineSegment, PipelineSegment, RouteResponse } from '../models/pipeline-segments';
+import { GemPipelineSegment, PipelineSegment, RouteResponse, ShippingLane } from '../models/pipeline-segments';
 
 @Injectable({
   providedIn: 'root'
@@ -43,6 +43,14 @@ export class PipelineService {
         `${this.apiUrl}/pipelines/route/${sourceNodeId}/${targetNodeId}`
       )
       .pipe(map(res => res.data));
+  }
+
+  getShippingLanes(limit?: number): Observable<ShippingLane[]> {
+    let url = `${this.apiUrl}/shipping-lanes`;
+    if (limit) {
+      url += `?limit=${limit}`;
+    }
+    return this.http.get<ShippingLane[]>(url);
   }
 }
 

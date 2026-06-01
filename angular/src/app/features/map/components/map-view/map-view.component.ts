@@ -2,10 +2,10 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnIni
 import { FormsModule } from '@angular/forms';
 import * as L from 'leaflet';
 
-import { PipelineNode, ReachableNode } from '../models/pipeline-node.model';
-import { GemPipelineSegment, PipelineSegment } from '../models/pipeline-segments';
-import { PipelineService } from '../services/pipeline.service';
-import { NodeMarkerUtil } from '../utils/node-marker.util';
+import { PipelineNode, ReachableNode } from '../../models/pipeline-node.model';
+import { GemPipelineSegment, PipelineSegment, ShippingLane } from '../../models/pipeline-segments';
+import { PipelineService } from '../../services/pipeline.service';
+import { NodeMarkerUtil } from '../../utils/node-marker.util';
 
 interface NodeTypeFilter {
   type: string;
@@ -16,18 +16,21 @@ interface NodeTypeFilter {
 }
 
 @Component({
-  selector: 'app-pipeline-map',
+  selector: 'app-map-view',
   imports: [FormsModule],
-  templateUrl: './pipeline-map.component.html',
-  styleUrl: './pipeline-map.component.css',
+  templateUrl: './map-view.component.html',
+  styleUrl: './map-view.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PipelineMapComponent implements OnInit, OnDestroy {
+export class MapViewComponent implements OnInit, OnDestroy {
   private readonly pipelineService = inject(PipelineService);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
   private map: L.Map | null = null;
   private readonly markersLayer: L.LayerGroup = L.layerGroup();
   private readonly reachableLayer: L.LayerGroup = L.layerGroup();
+  private readonly segmentsLayer: L.LayerGroup = L.layerGroup();
+  private shippingLanePolylines: Map<number, L.Polyline> = new Map();
+  private selectedShippingLaneId: number | null = null;
 
   nodes: PipelineNode[] = [];
   nodeTypes: NodeTypeFilter[] = [];
@@ -38,13 +41,16 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
   // Pipeline segment datasets and toggles
   iggielgnSegments: PipelineSegment[] = [];
   gemSegments: GemPipelineSegment[] = [];
+  shippingLanes: ShippingLane[] = [];
   showIggielgnSegments = true;
   showGemSegments = true;
+  showShippingLanes = true;
 
   ngOnInit(): void {
     this.initMap();
     this.loadNodes();
     this.loadPipelineSegments();
+    this.loadShippingLanes();
   }
   private loadPipelineSegments(): void {
     this.loading = true;
@@ -74,25 +80,43 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
     });
   }
 
+  private loadShippingLanes(): void {
+    this.pipelineService.getShippingLanes().subscribe({
+      next: (lanes) => {
+        this.shippingLanes = lanes;
+        this.updateSegmentsDisplay();
+        this.changeDetectorRef.markForCheck();
+        console.log(`Loaded ${lanes.length} shipping lanes`);
+      },
+      error: (err) => {
+        console.error('Failed to load shipping lanes:', err);
+        this.changeDetectorRef.markForCheck();
+      }
+    });
+  }
+
   onToggleIggielgnSegments(): void {
-    this.showIggielgnSegments = !this.showIggielgnSegments;
     this.updateSegmentsDisplay();
   }
 
   onToggleGemSegments(): void {
-    this.showGemSegments = !this.showGemSegments;
+    this.updateSegmentsDisplay();
+  }
+
+  onToggleShippingLanes(): void {
     this.updateSegmentsDisplay();
   }
 
   private updateSegmentsDisplay(): void {
-    // Remove old segment layers if any
-    if (!this.map) return;
-    // Remove previous segment layers
-    this.map.eachLayer((layer: any) => {
-      if (layer.options && layer.options.pane === 'overlayPane' && layer instanceof L.Polyline && !(layer instanceof L.Polygon)) {
-        this.map?.removeLayer(layer);
-      }
-    });
+    if (!this.map) {
+      return;
+    }
+
+    this.segmentsLayer.clearLayers();
+    this.shippingLanePolylines.clear();
+
+    const allCoords: [number, number][] = [];
+
     // Add IGGIELGN segments
     if (this.showIggielgnSegments && this.iggielgnSegments.length > 0) {
       this.iggielgnSegments.forEach(segment => {
@@ -101,8 +125,13 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
           weight: 4,
           opacity: 0.7
         });
+
+        segment.geometry.coordinates.forEach(([lon, lat]) => {
+          allCoords.push([lat, lon]);
+        });
       });
     }
+
     // Add GEM segments
     if (this.showGemSegments && this.gemSegments.length > 0) {
       this.gemSegments.forEach(segment => {
@@ -111,6 +140,28 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
           weight: 4,
           opacity: 0.7,
           dashArray: '8, 8'
+        });
+
+        segment.geometry.coordinates.forEach(line => {
+          line.forEach(([lon, lat]) => {
+            allCoords.push([lat, lon]);
+          });
+        });
+      });
+    }
+
+    // Add shipping lanes
+    if (this.showShippingLanes && this.shippingLanes.length > 0) {
+      this.shippingLanes.forEach(lane => {
+        const isSelected = lane.id === this.selectedShippingLaneId;
+        const polyline = this.drawShippingLane(lane, isSelected);
+
+        if (polyline) {
+          this.shippingLanePolylines.set(lane.id, polyline);
+        }
+
+        lane.geometry.coordinates.forEach(([lon, lat]) => {
+          allCoords.push([lat, lon]);
         });
       });
     }
@@ -121,7 +172,7 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
       return;
     }
 
-    L.polyline(coordinates.map(([lon, lat]) => [lat, lon] as [number, number]), style).addTo(this.map);
+    L.polyline(coordinates.map(([lon, lat]) => [lat, lon] as [number, number]), style).addTo(this.segmentsLayer);
   }
 
   private drawMultiLineString(coordinates: [number, number][][] | null | undefined, style: L.PolylineOptions): void {
@@ -130,7 +181,67 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
     }
 
     coordinates.forEach(line => {
-      L.polyline(line.map(([lon, lat]) => [lat, lon] as [number, number]), style).addTo(this.map!);
+      L.polyline(line.map(([lon, lat]) => [lat, lon] as [number, number]), style).addTo(this.segmentsLayer);
+    });
+  }
+
+  private drawShippingLane(lane: ShippingLane, isSelected: boolean): L.Polyline | null {
+    if (!this.map || !lane.geometry.coordinates) {
+      return null;
+    }
+
+    const style: L.PolylineOptions = {
+      color: isSelected ? '#FF6B35' : '#2ECC71',
+      weight: isSelected ? 5 : 3,
+      opacity: isSelected ? 0.9 : 0.6,
+      dashArray: isSelected ? '' : '10, 5'
+    };
+
+    const polyline = L.polyline(
+      lane.geometry.coordinates.map(([lon, lat]) => [lat, lon] as [number, number]),
+      style
+    );
+
+    polyline.on('click', () => {
+      this.onShippingLaneClick(lane.id);
+    });
+
+    polyline.addTo(this.segmentsLayer);
+    return polyline;
+  }
+
+  private onShippingLaneClick(laneId: number): void {
+    // Toggle selection: if clicking the same lane, deselect it
+    if (this.selectedShippingLaneId === laneId) {
+      this.selectedShippingLaneId = null;
+    } else {
+      this.selectedShippingLaneId = laneId;
+    }
+
+    // Redraw all shipping lanes with updated selection state
+    this.updateShippingLanesDisplay();
+    this.changeDetectorRef.markForCheck();
+  }
+
+  private updateShippingLanesDisplay(): void {
+    if (!this.map || !this.showShippingLanes) {
+      return;
+    }
+
+    // Remove only shipping lane polylines
+    this.shippingLanePolylines.forEach(polyline => {
+      this.segmentsLayer.removeLayer(polyline);
+    });
+    this.shippingLanePolylines.clear();
+
+    // Redraw shipping lanes
+    this.shippingLanes.forEach(lane => {
+      const isSelected = lane.id === this.selectedShippingLaneId;
+      const polyline = this.drawShippingLane(lane, isSelected);
+
+      if (polyline) {
+        this.shippingLanePolylines.set(lane.id, polyline);
+      }
     });
   }
 
@@ -153,8 +264,10 @@ export class PipelineMapComponent implements OnInit, OnDestroy {
       attribution: '© OpenStreetMap contributors'
     }).addTo(this.map);
 
+    this.segmentsLayer.addTo(this.map);
     this.reachableLayer.addTo(this.map);
     this.markersLayer.addTo(this.map);
+    queueMicrotask(() => this.map?.invalidateSize());
   }
 
   private loadNodes(): void {

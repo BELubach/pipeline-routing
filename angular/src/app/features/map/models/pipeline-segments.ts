@@ -42,3 +42,14 @@ export interface RouteResponse {
   num_segments: number;
   path: RouteSegment[];
 }
+
+export interface ShippingLane {
+  id: number;
+  from_node: NodeId | null;
+  to_node: NodeId | null;
+  distance_km: number;
+  geometry: {
+    type: 'LineString';
+    coordinates: [number, number][];
+  };
+}

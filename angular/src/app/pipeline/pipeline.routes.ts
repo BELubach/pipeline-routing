@@ -12,19 +12,11 @@ export const PIPELINE_ROUTES: Routes = [
             },
             {
                 path: 'network',
-                loadComponent: () => import('./maps/pipeline-map.component').then((m) => m.PipelineMapComponent)
-            },
-            {
-                path: 'border-crossings',
-                loadComponent: () => import('./maps/border-crossings.component').then((m) => m.BorderCrossingsComponent)
-            },
-            {
-                path: 'segments',
-                loadComponent: () => import('./maps/pipeline-segments').then((m) => m.PipelineSegments)
+                loadComponent: () => import('../features/map/components/map-view/map-view.component').then((m) => m.MapViewComponent)
             },
             {
                 path: 'gem-segments',
-                loadComponent: () => import('./maps/gem-pipeline-segments.component').then((m) => m.PipelineMapComponent)
+                loadComponent: () => import('../features/map/components/map-view/map-view.component').then((m) => m.MapViewComponent)
             }
         ]
     }
