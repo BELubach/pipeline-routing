@@ -41,6 +41,7 @@ export interface RouteResponse {
   total_distance_km: number;
   num_segments: number;
   path: RouteSegment[];
+  node_sequence?: NodeId[];
 }
 
 export interface ShippingLane {

@@ -1,0 +1,50 @@
+ .node-popup {
+   font-size: 0.9rem;
+ }
+
+ .node-popup__hint {
+   margin-top: 0.75rem;
+   margin-bottom: 0;
+   font-size: 0.8rem;
+   color: #5f6b7a;
+ }
+
+ .route-summary-popup h4 {
+   margin: 0 0 0.5rem 0;
+   font-size: 1rem;
+   color: #1f2937;
+ }
+
+ .route-summary-popup p {
+   margin: 0.25rem 0;
+   color: #334155;
+   font-size: 0.88rem;
+ }
+
+ .route-summary-popup__nodes {
+   margin: 0.5rem 0;
+   padding-left: 1.2rem;
+   max-height: 8.5rem;
+   overflow: auto;
+ }
+
+ .route-summary-popup__nodes li {
+   margin-bottom: 0.2rem;
+   font-size: 0.82rem;
+   color: #475569;
+ }
+
+ .route-summary-popup__clear {
+   margin-top: 0.25rem;
+   padding: 0.35rem 0.75rem;
+   border: none;
+   border-radius: 6px;
+   background: #b42318;
+   color: #fff;
+   cursor: pointer;
+   font-size: 0.82rem;
+ }
+
+ .route-summary-popup__clear:hover {
+   background: #912018;
+ }

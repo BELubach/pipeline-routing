@@ -25,7 +25,6 @@ class TestRoutingShortestPath:
     async def test_find_shortest_path_basic(self, db_session: AsyncSession):
         """Test finding shortest path between two nodes"""
         
-
         start_node = 32
         end_node = 55
         

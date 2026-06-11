@@ -1,0 +1,25 @@
+@if (popupMode === 'route-summary') {
+<div class="route-summary-popup">
+  <h4>Route Overview</h4>
+  <p><strong>Distance:</strong> {{ (routeDistanceKm ?? 0).toFixed(2) }} km</p>
+  <p><strong>Nodes:</strong> {{ routeNodes.length }}</p>
+
+  <ol class="route-summary-popup__nodes">
+    @for (nodeName of routeNodes.slice(0, 8); track $index) {
+    <li>{{ nodeName }}</li>
+    }
+    @if (routeNodes.length > 8) {
+    <li>... and {{ routeNodes.length - 8 }} more</li>
+    }
+  </ol>
+
+  <button type="button" class="route-summary-popup__clear" (click)="onClearRoute()">Clear route</button>
+</div>
+} @else {
+<div class="node-popup">
+  <h4>{{ sourceNode?.name || 'Node' }}</h4>
+  <p><strong>Type:</strong> {{ sourceNode?.node_type || 'generic' }}</p>
+  <p><strong>ID:</strong> {{ sourceNode?.id }}</p>
+  <p class="node-popup__hint">Use node clicks on the map to select start and end points.</p>
+</div>
+}

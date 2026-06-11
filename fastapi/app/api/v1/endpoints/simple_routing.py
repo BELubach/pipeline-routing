@@ -28,16 +28,18 @@ async def get_shortest_path(
         return [
             RouteNode(
                 seq=node.seq,
-                node_id=node.node_id,
-                node_name=node.node_name,
                 edge_id=node.edge_id,
+                start_node=node.start_node,
+                end_node=node.end_node,
                 distance_km=node.distance_km,
-                total_distance=node.total_distance
+                total_distance=node.total_distance,
+                geometry=node.geometry,
             )
             for node in path
         ]
         
     except ValueError as e:
+        print(e)
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -63,7 +65,8 @@ async def get_neighbors(
             )
             for neighbor in neighbors
         ]
-        
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

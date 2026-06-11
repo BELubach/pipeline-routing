@@ -18,11 +18,12 @@ CREATE OR REPLACE FUNCTION find_shortest_path(
 )
 RETURNS TABLE (
     seq             INT,
-    node_id         BIGINT,
-    node_name       TEXT,
     edge_id         BIGINT,
+    start_node      BIGINT,
+    end_node        BIGINT,
     distance_km     NUMERIC,
-    total_distance  NUMERIC
+    total_distance  NUMERIC,
+    geometry        TEXT
 ) LANGUAGE plpgsql STABLE AS $$
 BEGIN
     RETURN QUERY
@@ -43,13 +44,18 @@ BEGIN
     )
     SELECT
         r.seq::INT,
-        r.node::BIGINT AS node_id,
-        gn.name AS node_name,
         r.edge::BIGINT AS edge_id,
+        CASE WHEN r.node::BIGINT = ps.from_node_id::BIGINT THEN ps.from_node_id::BIGINT
+             ELSE ps.to_node_id::BIGINT
+        END AS start_node,
+        CASE WHEN r.edge = -1 THEN r.node::BIGINT
+             WHEN r.node::BIGINT = ps.from_node_id::BIGINT THEN ps.to_node_id::BIGINT
+             ELSE ps.from_node_id::BIGINT
+        END AS end_node,
         ps.length_km AS distance_km,
-        ROUND(r.agg_cost::NUMERIC, 2) AS total_distance
+        ROUND(r.agg_cost::NUMERIC, 2) AS total_distance,
+        ST_AsGeoJSON(ps.geom) AS geometry
     FROM route r
-    LEFT JOIN generic_nodes gn ON gn.id = r.node
     LEFT JOIN pipeline_segments ps ON ps.id = r.edge
     ORDER BY r.seq;
 END;

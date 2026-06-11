@@ -1,13 +1,14 @@
-from typing import Optional
+from typing import Optional, Any
 from pydantic import BaseModel
 
 class RouteNode(BaseModel):
     seq: int
-    node_id: int
-    node_name: Optional[str]
     edge_id: Optional[int]
+    start_node: Optional[int]
+    end_node: Optional[int]
     distance_km: Optional[float]
     total_distance: float
+    geometry: Optional[dict] = None
 
 
 class NeighborNode(BaseModel):

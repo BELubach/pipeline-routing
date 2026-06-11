@@ -2,22 +2,17 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnIni
 import { FormsModule } from '@angular/forms';
 import * as L from 'leaflet';
 
-import { PipelineNode, ReachableNode } from '../../models/pipeline-node.model';
-import { GemPipelineSegment, PipelineSegment, ShippingLane } from '../../models/pipeline-segments';
+import { NodeTypeFilter, PipelineLayerComponent } from '../../layers/pipeline-layer/pipeline-layer.component';
+import { SelectedNodeLinesComponent } from '../../layers/pipeline-layer/selected-node-lines.component';
+import { PipelineNode } from '../../models/pipeline-node.model';
+import { GemPipelineSegment, PipelineSegment, RouteResponse, ShippingLane } from '../../models/pipeline-segments';
 import { PipelineService } from '../../services/pipeline.service';
 import { NodeMarkerUtil } from '../../utils/node-marker.util';
-
-interface NodeTypeFilter {
-  type: string;
-  label: string;
-  color: string;
-  selected: boolean;
-  count: number;
-}
+import { CurrentRouteComponent } from '../map-legend/current-route.component';
 
 @Component({
   selector: 'app-map-view',
-  imports: [FormsModule],
+  imports: [FormsModule, CurrentRouteComponent],
   templateUrl: './map-view.component.html',
   styleUrl: './map-view.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -26,17 +21,21 @@ export class MapViewComponent implements OnInit, OnDestroy {
   private readonly pipelineService = inject(PipelineService);
   private readonly changeDetectorRef = inject(ChangeDetectorRef);
   private map: L.Map | null = null;
-  private readonly markersLayer: L.LayerGroup = L.layerGroup();
-  private readonly reachableLayer: L.LayerGroup = L.layerGroup();
-  private readonly segmentsLayer: L.LayerGroup = L.layerGroup();
-  private shippingLanePolylines: Map<number, L.Polyline> = new Map();
+  private readonly pipelineLayer = new PipelineLayerComponent();
+  readonly selectedNodeLines = new SelectedNodeLinesComponent();
   private selectedShippingLaneId: number | null = null;
+  private startNode: PipelineNode | null = null;
 
+  
   nodes: PipelineNode[] = [];
   nodeTypes: NodeTypeFilter[] = [];
   displayedNodesCount = 0;
   loading = true;
   error: string | null = null;
+  currentRoute: RouteResponse | null = null;
+  currentRouteSourceName = '';
+  currentRouteTargetName = '';
+  currentRouteNodes: string[] = [];
 
   // Pipeline segment datasets and toggles
   iggielgnSegments: PipelineSegment[] = [];
@@ -108,144 +107,33 @@ export class MapViewComponent implements OnInit, OnDestroy {
   }
 
   private updateSegmentsDisplay(): void {
-    if (!this.map) {
-      return;
-    }
-
-    this.segmentsLayer.clearLayers();
-    this.shippingLanePolylines.clear();
-
-    const allCoords: [number, number][] = [];
-
-    // Add IGGIELGN segments
-    if (this.showIggielgnSegments && this.iggielgnSegments.length > 0) {
-      this.iggielgnSegments.forEach(segment => {
-        this.drawLineString(segment.geometry.coordinates, {
-          color: '#0074D9',
-          weight: 4,
-          opacity: 0.7
-        });
-
-        segment.geometry.coordinates.forEach(([lon, lat]) => {
-          allCoords.push([lat, lon]);
-        });
-      });
-    }
-
-    // Add GEM segments
-    if (this.showGemSegments && this.gemSegments.length > 0) {
-      this.gemSegments.forEach(segment => {
-        this.drawMultiLineString(segment.geometry.coordinates, {
-          color: '#FF4136',
-          weight: 4,
-          opacity: 0.7,
-          dashArray: '8, 8'
-        });
-
-        segment.geometry.coordinates.forEach(line => {
-          line.forEach(([lon, lat]) => {
-            allCoords.push([lat, lon]);
-          });
-        });
-      });
-    }
-
-    // Add shipping lanes
-    if (this.showShippingLanes && this.shippingLanes.length > 0) {
-      this.shippingLanes.forEach(lane => {
-        const isSelected = lane.id === this.selectedShippingLaneId;
-        const polyline = this.drawShippingLane(lane, isSelected);
-
-        if (polyline) {
-          this.shippingLanePolylines.set(lane.id, polyline);
-        }
-
-        lane.geometry.coordinates.forEach(([lon, lat]) => {
-          allCoords.push([lat, lon]);
-        });
-      });
-    }
-  }
-
-  private drawLineString(coordinates: [number, number][] | null | undefined, style: L.PolylineOptions): void {
-    if (!this.map || !coordinates) {
-      return;
-    }
-
-    L.polyline(coordinates.map(([lon, lat]) => [lat, lon] as [number, number]), style).addTo(this.segmentsLayer);
-  }
-
-  private drawMultiLineString(coordinates: [number, number][][] | null | undefined, style: L.PolylineOptions): void {
-    if (!this.map || !coordinates) {
-      return;
-    }
-
-    coordinates.forEach(line => {
-      L.polyline(line.map(([lon, lat]) => [lat, lon] as [number, number]), style).addTo(this.segmentsLayer);
+    this.pipelineLayer.renderSegments({
+      iggielgnSegments: this.iggielgnSegments,
+      gemSegments: this.gemSegments,
+      shippingLanes: this.shippingLanes,
+      showIggielgnSegments: this.showIggielgnSegments,
+      showGemSegments: this.showGemSegments,
+      showShippingLanes: this.showShippingLanes,
+      selectedShippingLaneId: this.selectedShippingLaneId,
+      onShippingLaneClick: (laneId) => this.onShippingLaneClick(laneId)
     });
-  }
-
-  private drawShippingLane(lane: ShippingLane, isSelected: boolean): L.Polyline | null {
-    if (!this.map || !lane.geometry.coordinates) {
-      return null;
-    }
-
-    const style: L.PolylineOptions = {
-      color: isSelected ? '#FF6B35' : '#2ECC71',
-      weight: isSelected ? 5 : 3,
-      opacity: isSelected ? 0.9 : 0.6,
-      dashArray: isSelected ? '' : '10, 5'
-    };
-
-    const polyline = L.polyline(
-      lane.geometry.coordinates.map(([lon, lat]) => [lat, lon] as [number, number]),
-      style
-    );
-
-    polyline.on('click', () => {
-      this.onShippingLaneClick(lane.id);
-    });
-
-    polyline.addTo(this.segmentsLayer);
-    return polyline;
   }
 
   private onShippingLaneClick(laneId: number): void {
-    // Toggle selection: if clicking the same lane, deselect it
     if (this.selectedShippingLaneId === laneId) {
       this.selectedShippingLaneId = null;
     } else {
       this.selectedShippingLaneId = laneId;
     }
 
-    // Redraw all shipping lanes with updated selection state
-    this.updateShippingLanesDisplay();
+    this.updateSegmentsDisplay();
     this.changeDetectorRef.markForCheck();
   }
 
-  private updateShippingLanesDisplay(): void {
-    if (!this.map || !this.showShippingLanes) {
-      return;
-    }
-
-    // Remove only shipping lane polylines
-    this.shippingLanePolylines.forEach(polyline => {
-      this.segmentsLayer.removeLayer(polyline);
-    });
-    this.shippingLanePolylines.clear();
-
-    // Redraw shipping lanes
-    this.shippingLanes.forEach(lane => {
-      const isSelected = lane.id === this.selectedShippingLaneId;
-      const polyline = this.drawShippingLane(lane, isSelected);
-
-      if (polyline) {
-        this.shippingLanePolylines.set(lane.id, polyline);
-      }
-    });
-  }
-
   ngOnDestroy(): void {
+    this.pipelineLayer.clear();
+    this.selectedNodeLines.clear();
+    this.resetCurrentRouteData();
     this.map?.remove();
   }
 
@@ -264,9 +152,8 @@ export class MapViewComponent implements OnInit, OnDestroy {
       attribution: '© OpenStreetMap contributors'
     }).addTo(this.map);
 
-    this.segmentsLayer.addTo(this.map);
-    this.reachableLayer.addTo(this.map);
-    this.markersLayer.addTo(this.map);
+    this.pipelineLayer.initialize(this.map);
+    this.selectedNodeLines.initialize(this.map);
     queueMicrotask(() => this.map?.invalidateSize());
   }
 
@@ -277,7 +164,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
         this.initializeNodeTypes(nodes);
         this.loading = false;
         this.changeDetectorRef.markForCheck();
-        this.addMarkersToMap(nodes, true);
+        this.renderMarkers(true);
       },
       error: (err) => {
         console.error('Error loading nodes:', err);
@@ -312,147 +199,83 @@ export class MapViewComponent implements OnInit, OnDestroy {
   }
 
   private updateMarkersDisplay(): void {
-    this.markersLayer.clearLayers();
-    this.addMarkersToMap(this.nodes, false);
+    this.renderMarkers(false);
   }
 
-  private addMarkersToMap(nodes: PipelineNode[], fitBounds = false): void {
+  private renderMarkers(fitBounds = false): void {
     try {
-      if (!this.map) {
-        console.error('Map not initialized!');
-        return;
-      }
-
-      this.markersLayer.clearLayers();
-
-      const selectedTypes = new Set(this.nodeTypes.filter(t => t.selected).map(t => t.type));
-
-      const uniqueNodes = nodes.filter((node, index, self) => {
-        if (!Number.isFinite(node.lat) || !Number.isFinite(node.lon)) {
-          return false;
-        }
-
-        const nodeType = node.node_type || 'generic';
-        if (selectedTypes.size > 0 && !selectedTypes.has(nodeType)) {
-          return false;
-        }
-
-        return index === self.findIndex((candidate) => candidate.lat === node.lat && candidate.lon === node.lon);
+      this.displayedNodesCount = this.pipelineLayer.renderMarkers({
+        nodes: this.nodes,
+        nodeTypes: this.nodeTypes,
+        fitBounds,
+        onMarkerClick: (node) => this.handleNodeClick(node)
       });
 
-      this.displayedNodesCount = uniqueNodes.length;
-
-      uniqueNodes.forEach((node) => {
-        const marker = NodeMarkerUtil.createNodeMarker(node).addTo(this.markersLayer);
-
-        const popupContent = this.createNodePopup(node);
-        const popup = L.popup({ minWidth: 250 }).setContent(popupContent);
-        marker.bindPopup(popup);
-
-        marker.on('popupopen', () => {
-          this.setupPopupInteraction(node);
-        });
-      });
-
-      if (fitBounds && uniqueNodes.length > 0) {
-        const bounds = L.latLngBounds(uniqueNodes.map((node) => [node.lat, node.lon] as [number, number]));
-        this.map.fitBounds(bounds, { padding: [50, 50] });
-        console.log('Map bounds set to:', bounds);
-      }
-
-      console.log('Markers added successfully:', uniqueNodes.length);
       this.changeDetectorRef.markForCheck();
     } catch (error) {
       console.error('Error adding markers to map:', error);
     }
   }
 
-  private createNodePopup(node: PipelineNode): HTMLElement {
-    const container = document.createElement('div');
-    container.className = 'node-popup';
-    const additionalContent = `
-      <hr>
-      <div class="reachable-section">
-        <h4>Find Reachable Nodes</h4>
-        <label for="maxCost-${node.id}">Max Cost (EUR/MWh):</label>
-        <input type="number" id="maxCost-${node.id}" value="1000" step="100" min="0">
-        <button id="findReachable-${node.id}">Find Reachable</button>
-        <button id="clearReachable-${node.id}" style="margin-left: 5px;">Clear</button>
-        <div id="reachableResult-${node.id}" class="reachable-result"></div>
-      </div>
-    `;
-    container.innerHTML = NodeMarkerUtil.createNodePopupContent(node, additionalContent);
-    return container;
-  }
-
-  private setupPopupInteraction(node: PipelineNode): void {
-    const findButton = document.getElementById(`findReachable-${node.id}`);
-    const clearButton = document.getElementById(`clearReachable-${node.id}`);
-    const maxCostInput = document.getElementById(`maxCost-${node.id}`) as HTMLInputElement | null;
-    const resultDiv = document.getElementById(`reachableResult-${node.id}`);
-
-   
-  }
-
-  private visualizeReachableNodes(sourceNode: PipelineNode, reachableNodes: ReachableNode[]): void {
-    this.reachableLayer.clearLayers();
-
-    if (!this.map) {
+  private handleNodeClick(node: PipelineNode): void {
+    if (!this.startNode) {
+      this.startNode = node;
+      this.selectedNodeLines.showStartNode(node);
+      this.resetCurrentRouteData();
+      this.changeDetectorRef.markForCheck();
       return;
     }
 
-    reachableNodes.forEach((targetNode) => {
-      const line = L.polyline(
-        [[sourceNode.lat, sourceNode.lon], [targetNode.lat, targetNode.lon]],
-        {
-          color: '#2ecc71',
-          weight: 2,
-          opacity: 0.6,
-          dashArray: '5, 5'
-        }
-      ).addTo(this.reachableLayer);
+    if (String(this.startNode.id) === String(node.id)) {
+      this.clearRouteAndSelection();
+      this.changeDetectorRef.markForCheck();
+      return;
+    }
 
-      line.bindPopup(`
-        <div class="path-popup">
-          <p><strong>From:</strong> ${sourceNode.name}</p>
-          <p><strong>To:</strong> ${targetNode.name}</p>
-          <p><strong>Cost:</strong> ${targetNode.cost_eur_mwh.toFixed(4)} EUR/MWh</p>
-        </div>
-      `);
+    const sourceNode = this.startNode;
+    const targetNode = node;
+    this.changeDetectorRef.markForCheck();
+
+    this.pipelineService.getRoute(sourceNode.id, targetNode.id).subscribe({
+      next: (route: RouteResponse) => {
+        this.selectedNodeLines.drawRoute(sourceNode, targetNode, route, this.nodes);
+        this.currentRoute = route;
+        this.currentRouteSourceName = sourceNode.name || String(sourceNode.id);
+        this.currentRouteTargetName = targetNode.name || String(targetNode.id);
+        this.currentRouteNodes = this.getRouteNodeNames(route, sourceNode, targetNode);
+        this.changeDetectorRef.markForCheck();
+      },
+      error: (err) => {
+        this.changeDetectorRef.markForCheck();
+      }
     });
-
-    reachableNodes.forEach((node) => {
-      const marker = L.circleMarker([node.lat, node.lon], {
-        radius: 6,
-        fillColor: '#2ecc71',
-        color: '#fff',
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.8
-      }).addTo(this.reachableLayer);
-
-      marker.bindPopup(`
-        <div class="reachable-node-popup">
-          <h4>${node.name}</h4>
-          <p><strong>Type:</strong> ${node.node_type.replace(/_/g, ' ')}</p>
-          <p><strong>Cost:</strong> ${node.cost_eur_mwh.toFixed(4)} EUR/MWh</p>
-        </div>
-      `);
-    });
-
-    const sourceMarker = L.circleMarker([sourceNode.lat, sourceNode.lon], {
-      radius: 10,
-      fillColor: '#e74c3c',
-      color: '#fff',
-      weight: 3,
-      opacity: 1,
-      fillOpacity: 0.9
-    }).addTo(this.reachableLayer);
-
-    sourceMarker.bindPopup('<div class="source-node-popup"><strong>Source Node</strong></div>');
   }
 
-  private clearReachableNodes(): void {
-    this.reachableLayer.clearLayers();
+  private clearRouteAndSelection(): void {
+    this.startNode = null;
+    this.selectedNodeLines.clear();
+    this.resetCurrentRouteData();
+  }
+
+  onClearCurrentRoute(): void {
+    this.clearRouteAndSelection();
+    this.changeDetectorRef.markForCheck();
+  }
+
+  private resetCurrentRouteData(): void {
+    this.currentRoute = null;
+    this.currentRouteSourceName = '';
+    this.currentRouteTargetName = '';
+    this.currentRouteNodes = [];
+  }
+
+  private getRouteNodeNames(route: RouteResponse, sourceNode: PipelineNode, targetNode: PipelineNode): string[] {
+    if ((route.node_sequence?.length ?? 0) > 0) {
+      const nodeById = new Map(this.nodes.map((node) => [String(node.id), node]));
+      return (route.node_sequence ?? [])
+        .map((nodeId) => nodeById.get(String(nodeId))?.name || String(nodeId));
+    }
+
+    return [sourceNode.name || String(sourceNode.id), targetNode.name || String(targetNode.id)];
   }
 }

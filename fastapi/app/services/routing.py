@@ -1,6 +1,7 @@
 """
 Routing service layer - handles all routing business logic
 """
+import json
 from typing import List, Dict, Any
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,25 +31,26 @@ async def find_shortest_path(
     
     result = await db.execute(
         text("""
-            SELECT seq, node_id, node_name, edge_id, distance_km, total_distance
+            SELECT seq, edge_id, start_node, end_node, distance_km, total_distance, geometry
             FROM find_shortest_path(:start_id, :end_id)
         """),
         {"start_id": start_node_id, "end_id": end_node_id}
     )
-    
+
     rows = result.fetchall()
-    
+
     if not rows:
         raise ValueError(f"No path found between nodes {start_node_id} and {end_node_id}")
-    
+
     path = [
         RouteNode(
             seq=row.seq,
-            node_id=row.node_id,
-            node_name=row.node_name,
             edge_id=row.edge_id,
+            start_node=row.start_node,
+            end_node=row.end_node,
             distance_km=float(row.distance_km) if row.distance_km else None,
-            total_distance=float(row.total_distance)
+            total_distance=float(row.total_distance),
+            geometry=json.loads(row.geometry) if row.geometry else None,
         )
         for row in rows
     ]
@@ -70,8 +72,14 @@ async def get_node_neighbors(
     Returns:
         List of NeighborNode objects
     """
-    print(f"👥 Finding neighbors for node {node_id}")
     
+    exists = await db.execute(
+        text("SELECT 1 FROM generic_nodes WHERE id = :node_id"),
+        {"node_id": node_id}
+    )
+    if not exists.fetchone():
+        raise ValueError(f"Node {node_id} does not exist")
+
     result = await db.execute(
         text("""
             SELECT neighbor_id, neighbor_name, distance_km, segment_id
@@ -79,7 +87,7 @@ async def get_node_neighbors(
         """),
         {"node_id": node_id}
     )
-    
+
     rows = result.fetchall()
     
     neighbors = [

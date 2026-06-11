@@ -27,8 +27,9 @@ export const routes: Routes = [
   },
   {
     path: 'pipeline-map',
-    loadChildren: () => import('./pipeline/pipeline.routes').then(m => m.PIPELINE_ROUTES)
+    loadComponent: () => import('./features/map/components/map-view/map-view.component').then((m) => m.MapViewComponent)
   },
+
   {
     path: '',
     redirectTo: '/dashboard',
