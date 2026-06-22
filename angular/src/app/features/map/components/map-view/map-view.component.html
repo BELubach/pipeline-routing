@@ -1,67 +1,43 @@
-<div class="pipeline-shell">
+<div class="container mx-auto p-4">
 
   <section class="feature-content">
 
-    <div class="map-container">
-      <div class="header">
+    <div class="container">
+      <div class="header flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <h1>Pipeline Network Map</h1>
-        <div class="filters">
-          <h3>Filter by Type:</h3>
-          <div class="type-filters">
-            @for (nodeType of nodeTypes; track nodeType.type) {
-            <div class="filter-item">
-              <label>
-                <input type="checkbox" [(ngModel)]="nodeType.selected" (change)="onTypeToggle(nodeType)" />
-                <span class="legend-circle" [style.background-color]="nodeType.color"></span>
-                <span class="filter-label">{{ nodeType.label }} ({{ nodeType.count }})</span>
-              </label>
-            </div>
-            }
-          </div>
-          <div class="segment-toggles" style="margin-top: 1rem; display: flex; gap: 1.5rem;">
-            <label class="filter-item">
-              <input type="checkbox" [(ngModel)]="showIggielgnSegments" (change)="onToggleIggielgnSegments()" />
-              <span class="legend-circle" style="background-color: #0074D9;"></span>
-              <span class="filter-label">IGGIELGN Segments ({{ iggielgnSegments.length }})</span>
-            </label>
-            <label class="filter-item">
-              <input type="checkbox" [(ngModel)]="showGemSegments" (change)="onToggleGemSegments()" />
-              <span class="legend-circle" style="background-color: #FF4136;"></span>
-              <span class="filter-label">GEM Segments ({{ gemSegments.length }})</span>
-            </label>
-            <label class="filter-item">
-              <input type="checkbox" [(ngModel)]="showShippingLanes" (change)="onToggleShippingLanes()" />
-              <span class="legend-circle" style="background-color: #2ECC71;"></span>
-              <span class="filter-label">Shipping Lanes ({{ shippingLanes.length }})</span>
-            </label>
-          </div>
-        </div>
+        <app-custom-box></app-custom-box>
+        <app-data-select
+          [visibility]="legendVisibility"
+          [iggielgnCount]="drawingLayer.iggielgnSegments.length"
+          [gemCount]="drawingLayer.gemSegments.length"
+          [shippingLaneCount]="drawingLayer.shippingLanes.length"
+          (visibilityChanged)="onLegendVisibilityChanged()"
+        ></app-data-select>
+        <app-current-route
+          [route]="selectedRouteLayer.currentRoute"
+          [sourceName]="selectedRouteLayer.currentRouteSourceName"
+          [targetName]="selectedRouteLayer.currentRouteTargetName"
+          (clearRoute)="onClearCurrentRoute()"
+        ></app-current-route>
       </div>
 
-
-  <app-current-route
-    [route]="currentRoute"
-    [sourceName]="currentRouteSourceName"
-    [targetName]="currentRouteTargetName"
-    (clearRoute)="onClearCurrentRoute()"
-  ></app-current-route>
   
-      @if (loading) {
+      @if (drawingLayer.loading) {
       <div class="loading">
         <p>Loading pipeline nodes...</p>
       </div>
       }
 
-      @if (error) {
+      @if (drawingLayer.error) {
       <div class="error">
-        <p>{{ error }}</p>
+        <p>{{ drawingLayer.error }}</p>
       </div>
       }
 
-      <div id="map"></div>
+      <div id="map" class="h-96 w-full"></div>
 
       <div class="stats">
-        <p>Displaying {{ displayedNodesCount }} of {{ nodes.length }} nodes</p>
+        <p>Displaying {{ drawingLayer.displayedNodesCount }} of {{ drawingLayer.nodes.length }} nodes</p>
       </div>
     </div>
   </section>

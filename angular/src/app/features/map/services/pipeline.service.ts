@@ -31,6 +31,7 @@ interface RawRouteGeometryStep {
   providedIn: 'root'
 })
 export class PipelineService {
+
   private readonly http = inject(HttpClient);
   private readonly apiUrl = '/api/v1';
 

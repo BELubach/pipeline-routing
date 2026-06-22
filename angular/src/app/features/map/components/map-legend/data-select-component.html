@@ -1,0 +1,42 @@
+<h3>Filter by Type:</h3>
+<div class="flex   gap-6">
+  <div class="flex-row">
+    <div class="flex flex-col gap-4">
+      <!-- @for (nodeType of nodeTypes; track nodeType.type) { -->
+      <label>
+        <input type="checkbox" [(ngModel)]="visibility.showGenericNodes" (change)="onVisibilityChanged()"  />
+        <span class="legend-circle" style="background-color: #0074D9;"></span>
+        <span class="filter-label">Generic Nodes </span>
+      </label>
+      <label>
+        <input type="checkbox" [(ngModel)]="visibility.showLngNodes" (change)="onVisibilityChanged()" />
+        <span class="legend-circle" style="background-color: #0074D9;"></span>
+        <span class="filter-label">LNG Nodes </span>
+      </label>
+      <label>
+        <input type="checkbox" [(ngModel)]="visibility.showBorderNodes" (change)="onVisibilityChanged()"  />
+        <span class="legend-circle" style="background-color: #0074D9;"></span>
+        <span class="filter-label">Border Nodes </span>
+      </label>
+    </div>
+  </div>
+  <div class="flex-row">
+    <div class="flex flex-col gap-4">
+      <label class="">
+        <input type="checkbox" [(ngModel)]="visibility.showIggielgnSegments" (change)="onVisibilityChanged()" />
+        <span class="legend-circle" style="background-color: #0074D9;"></span>
+        <span class="filter-label">IGGIELGN Segments ({{ iggielgnCount }})</span>
+      </label>
+      <label class="">
+        <input type="checkbox" [(ngModel)]="visibility.showGemSegments" (change)="onVisibilityChanged()" />
+        <span class="legend-circle" style="background-color: #FF4136;"></span>
+        <span class="filter-label">GEM Segments ({{ gemCount }})</span>
+      </label>
+      <label class="">
+        <input type="checkbox" [(ngModel)]="visibility.showShippingLanes" (change)="onVisibilityChanged()" />
+        <span class="legend-circle" style="background-color: #2ECC71;"></span>
+        <span class="filter-label">Shipping Lanes ({{ shippingLaneCount }})</span>
+      </label>
+    </div>
+  </div>
+</div>

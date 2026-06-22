@@ -7,6 +7,11 @@ export class SelectedNodeLinesComponent {
   private map: L.Map | null = null;
   private readonly linesLayer: L.LayerGroup = L.layerGroup();
 
+  currentRoute: RouteResponse | null = null;
+  currentRouteSourceName = '';
+  currentRouteTargetName = '';
+  currentRouteNodes: string[] = [];
+
   initialize(map: L.Map): void {
     this.map = map;
     this.linesLayer.addTo(this.map);
@@ -14,6 +19,21 @@ export class SelectedNodeLinesComponent {
 
   clear(): void {
     this.linesLayer.clearLayers();
+    this.clearRouteData();
+  }
+
+  clearRouteData(): void {
+    this.currentRoute = null;
+    this.currentRouteSourceName = '';
+    this.currentRouteTargetName = '';
+    this.currentRouteNodes = [];
+  }
+
+  setCurrentRoute(route: RouteResponse, sourceName: string, targetName: string, routeNodeNames: string[]): void {
+    this.currentRoute = route;
+    this.currentRouteSourceName = sourceName;
+    this.currentRouteTargetName = targetName;
+    this.currentRouteNodes = routeNodeNames;
   }
 
   showStartNode(node: PipelineNode): void {
@@ -22,6 +42,7 @@ export class SelectedNodeLinesComponent {
     }
 
     this.linesLayer.clearLayers();
+    this.clearRouteData();
 
     L.circleMarker([node.lat, node.lon], {
       radius: 7,

@@ -1,0 +1,8 @@
+<div class="w-64 bg-white shadow-md rounded p-4">
+    simple component here
+    <label class="">
+        <input type="checkbox" [(ngModel)]="buttonOn" (ngModelChange)="onButtonToggle()" />
+        <span class="legend-circle" style="background-color: #0074D9;"></span>
+        <span class="filter-label">{{message }}</span>
+    </label>
+</div>
