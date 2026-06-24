@@ -22,7 +22,7 @@ def upgrade():
     op.create_table(
         "maritime_routes",
         sa.Column("id", sa.BigInteger, primary_key=True, autoincrement=True),
-        sa.Column("geometry", geoalchemy2.types.Geometry(geometry_type="LINESTRING", srid=4326), spatial_index=False, nullable=True),
+        sa.Column("geometry", geoalchemy2.types.Geometry(geometry_type="LINESTRING", srid=4326, spatial_index=False),  nullable=True),
         sa.Column("pass", sa.Text, nullable=True),
     )
 
