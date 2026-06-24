@@ -1,13 +1,7 @@
 from pydantic import BaseModel, ConfigDict, field_validator
 from typing import Optional, Dict, Any
 from datetime import datetime
-
-
-class GeoJSONGeometry(BaseModel):
-    """GeoJSON Geometry schema"""
-    type: str
-    coordinates: list
-
+from app.schemas.base import GeoJSONGeometry
 
 class PlantBase(BaseModel):
     """Base plant schema"""

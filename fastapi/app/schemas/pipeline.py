@@ -3,13 +3,8 @@ from typing import Any, Optional
 
 from pydantic import BaseModel
 from app.schemas.metadata import ResponseMetadata
+from app.schemas.base import Node
 
-
-
-class Node(BaseModel):
-    id: int
-    lat: float
-    lon: float
 
 class BorderNodeDTO(Node):
     

@@ -1,9 +1,7 @@
-from pydantic import BaseModel, ConfigDict, field_validator
-from typing import Optional, Dict, Any
-from datetime import datetime
+from typing import Optional
+from app.schemas.base import Node, Segment
 
-
-class MaritimeRoute(BaseModel):
+class MaritimeRouteSegment(Segment):
     """GeoJSON Geometry schema"""
-    type: str
-    coordinates: list
+    
+    name: Optional[str] = None
