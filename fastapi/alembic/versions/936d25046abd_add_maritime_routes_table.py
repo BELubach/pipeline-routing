@@ -30,4 +30,6 @@ def upgrade():
     op.create_index(op.f('ix_maritime_routes_id'), 'maritime_routes', ['id'], unique=False)
 
 def downgrade():
+    op.drop_index('ix_maritime_routes_geom', table_name='maritime_routes')
+    op.drop_index(op.f('ix_maritime_routes_id'), table_name='maritime_routes')
     op.drop_table("maritime_routes")
