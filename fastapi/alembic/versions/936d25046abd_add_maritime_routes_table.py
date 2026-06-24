@@ -26,6 +26,8 @@ def upgrade():
         sa.Column("pass", sa.Text, nullable=True),
     )
 
+    op.create_index('ix_maritime_routes_geom', 'maritime_routes', ['geometry'], unique=False, postgresql_using='gist')
+    op.create_index(op.f('ix_maritime_routes_id'), 'maritime_routes', ['id'], unique=False)
 
 def downgrade():
     op.drop_table("maritime_routes")

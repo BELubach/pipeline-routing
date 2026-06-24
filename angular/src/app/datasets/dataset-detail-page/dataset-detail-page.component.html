@@ -1,0 +1,75 @@
+<div class="p-4 max-w-5xl mx-auto">
+    @if (dataset(); as d) {
+
+    <!-- Header Card -->
+    <p-card>
+        <ng-template pTemplate="header">
+            <div class="flex flex-col align-items-center justify-content-between px-4 pt-4">
+                <div class="mb-2">
+                    <h1 class="text-2xl font-bold m-0">{{ d.name }}</h1>
+                </div>
+
+                <div class="p-2">
+                    @if (d.has_nodes) {
+                    <i class="pi pi-check text-primary mr-2 text-green-600 font-bold">
+                    </i>
+                    <span class="text-green-600 ">nodes</span>
+                    } @else {
+                    <i class="pi pi-times text-primary mr-2 text-red-600 font-bold"></i>
+                    <span class="text-red-600 ">nodes</span>
+                    }
+                </div>
+                <div class="p-2">
+                    @if (d.has_edges) {
+                    <i class="pi pi-check text-primary mr-2 text-green-600 font-bold"></i>
+                    <span class="text-green-600 ">edges</span>
+                    } @else {
+                    <i class="pi pi-times text-primary mr-2 text-red-600 font-bold"></i>
+                    <span class="text-red-600 ">edges</span>
+                    }
+                </div>
+            </div>
+        </ng-template>
+
+        <p class="text-color-secondary line-height-3 mt-2">{{ d.description }}</p>
+    </p-card>
+
+    <p-divider align="left">
+        <span class="font-semibold text-lg">Components</span>
+    </p-divider>
+
+    <!-- Components Table -->
+    <p-table [value]="d.components" styleClass="p-datatable-gridlines p-datatable-striped"
+        [tableStyle]="{'min-width': '50rem'}">
+        <ng-template pTemplate="header">
+            <tr>
+                <th>Label</th>
+                <th>Type</th>
+                <th>Records</th>
+                <th>Description</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-comp>
+            <tr>
+                <td class="font-semibold">{{ comp.label }}</td>
+                <td>
+                    @if (comp.kind === 'node') {
+                    <p-tag value="Node" icon="pi pi-circle-fill" severity="info" />
+                    } @else {
+                    <p-tag value="Edge" icon="pi pi-arrows-h" severity="secondary" />
+                    }
+                </td>
+                <td>
+                    <p-badge [value]="comp.record_count | number" severity="contrast" />
+                </td>
+                <td class="text-color-secondary">{{ comp.description }}</td>
+            </tr>
+        </ng-template>
+    </p-table>
+
+    } @else {
+    <div class="flex justify-content-center align-items-center" style="height: 300px">
+        <p-progressSpinner />
+    </div>
+    }
+</div>

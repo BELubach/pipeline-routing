@@ -6,39 +6,12 @@
       <div class="header flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <h1>Pipeline Network Map</h1>
         <app-custom-box></app-custom-box>
-        <app-data-select
-          [visibility]="legendVisibility"
-          [iggielgnCount]="drawingLayer.iggielgnSegments.length"
-          [gemCount]="drawingLayer.gemSegments.length"
-          [shippingLaneCount]="drawingLayer.shippingLanes.length"
-          (visibilityChanged)="onLegendVisibilityChanged()"
-        ></app-data-select>
-        <app-current-route
-          [route]="selectedRouteLayer.currentRoute"
-          [sourceName]="selectedRouteLayer.currentRouteSourceName"
-          [targetName]="selectedRouteLayer.currentRouteTargetName"
-          (clearRoute)="onClearCurrentRoute()"
-        ></app-current-route>
-      </div>
+        <app-data-select [visibility]="legendVisibility"></app-data-select>
 
-  
-      @if (drawingLayer.loading) {
-      <div class="loading">
-        <p>Loading pipeline nodes...</p>
       </div>
-      }
-
-      @if (drawingLayer.error) {
-      <div class="error">
-        <p>{{ drawingLayer.error }}</p>
-      </div>
-      }
 
       <div id="map" class="h-96 w-full"></div>
 
-      <div class="stats">
-        <p>Displaying {{ drawingLayer.displayedNodesCount }} of {{ drawingLayer.nodes.length }} nodes</p>
-      </div>
     </div>
   </section>
 </div>

@@ -3,8 +3,8 @@ Dataset metadata schemas for proper attribution and licensing
 """
 
 from datetime import date, datetime
-from typing import Optional, Any
-from pydantic import BaseModel, HttpUrl, Field, ConfigDict
+from typing import Any, Optional
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
 
 class ResponseMetadata(BaseModel):
@@ -42,7 +42,7 @@ class ResponseMetadata(BaseModel):
     })
 
 
-class DatasetMetadata(BaseModel):
+class DatasetDetailsdata(BaseModel):
     """Metadata for a single dataset used in the API"""
     
     id: str = Field(..., description="Unique identifier for the dataset")
@@ -86,12 +86,11 @@ class DatasetMetadata(BaseModel):
         }
     })
 
-
-class DatasetResponse(BaseModel):
+class DatasetListResponse(BaseModel):
     """Response containing all dataset metadata"""
-    
-    datasets: list[DatasetMetadata] = Field(..., description="List of all datasets used in the API")
-    
+
+    datasets: list[DatasetDetailsdata] = Field(..., description="List of all datasets used in the API")
+
     model_config = ConfigDict(json_schema_extra={
         "example": {
             "datasets": [
@@ -104,3 +103,43 @@ class DatasetResponse(BaseModel):
             ]
         }
     })
+
+
+class DatasetComponentStorage(BaseModel):
+    """Storage details for a dataset component."""
+
+    table: Optional[str] = Field(None, description="Backing table name when persisted")
+    source: str = Field(..., description="Whether the component is stored or derived")
+    status: Optional[str] = Field(None, description="Lifecycle status such as planned or active")
+
+
+class DatasetComponentDerivation(BaseModel):
+    """Lineage information for a derived component."""
+
+    derived_from: list[str] = Field(..., description="Upstream component keys used to derive this component")
+    method: Optional[str] = Field(None, description="Transformation method used to derive the component")
+    derived_at: Optional[date] = Field(None, description="Date on which the derived component was last produced")
+
+
+class DatasetComponent(BaseModel):
+    """One logical component within a dataset structure."""
+
+    key: str = Field(..., description="Stable component identifier")
+    label: str = Field(..., description="Human-readable component name")
+    kind: str = Field(..., description="Logical kind, for example node or edge")
+    record_count: int = Field(..., description="Current row count for the component")
+    storage: DatasetComponentStorage = Field(..., description="Persistence details for the component")
+    derivation: Optional[DatasetComponentDerivation] = Field(None, description="Lineage details for derived components")
+    description: Optional[str] = Field(None, description="Short description of the component")
+
+
+class DatasetMetadata(BaseModel):
+    """Metadata for a single dataset, including structured component details."""
+    id: str = Field(..., description="Unique identifier for the dataset")
+    name: str = Field(..., description="Human-readable name of the dataset")
+    description: Optional[str] = Field(None, description="Brief description of the dataset")
+    has_nodes: bool = Field(..., description="Whether the dataset currently exposes node-like components")
+    has_edges: bool = Field(..., description="Whether the dataset currently exposes edge-like components")
+    primary_network_type: str = Field(..., description="Primary network family represented by the dataset")
+
+    components: list[DatasetComponent] = Field(..., description="Logical components grouped under the dataset")

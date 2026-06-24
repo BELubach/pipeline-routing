@@ -28,7 +28,7 @@ from app.schemas.pipeline import (
     BorderNodesResponse,
     SegmentsResponse
 )
-from app.core.metadata import create_response_metadata
+from app.services.metadata import create_response_metadata
 
 router = APIRouter()
 

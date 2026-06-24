@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.metadata import create_response_metadata
+from app.services.metadata import create_response_metadata
 from app.db.session import get_db
 from app.models.pipeline_GEM import GEMPipelineSegment
 from app.schemas.pipeline import GEMSegmentsResponse, GEMPipelinesResponse, GEMRouteSegment, GEMPipelineDTO
