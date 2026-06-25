@@ -5,12 +5,10 @@ import { FormsModule } from '@angular/forms';
 export interface LegendVisibility {
     showIggielgnSegments: boolean;
     showGemSegments: boolean;
-    showShippingLanes: boolean;
     showGenericNodes: boolean;
     showLngNodes: boolean;
     showBorderNodes: boolean;
 }
-
 
 @Component({
     selector: 'app-data-select',
@@ -22,7 +20,6 @@ export class DataSelectComponent {
     @Input() visibility: LegendVisibility = {
         showIggielgnSegments: true,
         showGemSegments: true,
-        showShippingLanes: true, 
         showGenericNodes: true, 
         showLngNodes: true,
         showBorderNodes: true
