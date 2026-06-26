@@ -1,5 +1,5 @@
 import * as L from 'leaflet';
-import { PipelineNode } from '../models/pipeline-node.model';
+import { Node } from '../models/generic-node.model';
 
 export interface NodeTypeConfig {
   type: string;
@@ -34,7 +34,7 @@ export class NodeMarkerUtil {
    * Create a circle marker for a node with consistent styling
    */
   static createNodeMarker(
-    node: PipelineNode,
+    node: Node,
     options?: {
       radius?: number;
       weight?: number;
@@ -58,17 +58,15 @@ export class NodeMarkerUtil {
    * Create a standard popup content for a node
    */
   static createNodePopupContent(
-    node: PipelineNode,
+    node: Node,
     additionalInfo?: string
   ): string {
     const nodeType = this.getNodeTypeLabel(node.node_type);
     
     return `
       <div class="node-popup">
-        <h4>${node.name}</h4>
         <p><strong>Type:</strong> ${nodeType}</p>
         <p><strong>ID:</strong> ${node.id}</p>
-        ${node.country_code ? `<p><strong>Country:</strong> ${node.country_code}</p>` : ''}
         ${additionalInfo || ''}
       </div>
     `;

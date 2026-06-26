@@ -9,3 +9,5 @@ export interface BorderNode {
   from_TSO: string | null;
   to_TSO: string | null;
 }
+
+

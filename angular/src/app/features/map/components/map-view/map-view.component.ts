@@ -5,7 +5,7 @@ import { forkJoin } from 'rxjs';
 import { DataSelectComponent } from '../map-legend/data-select-component';
 import { PipelineLayerComponent, NodeTypeFilter } from '../../layers/pipeline-layer/pipeline-layer.component';
 import { PipelineService } from '../../services/pipeline.service';
-import { PipelineNode } from '../../models/pipeline-node.model';
+import { Node } from '../../models/generic-node.model';
 
 @Component({
   selector: 'app-map-view',
@@ -31,7 +31,8 @@ export class MapViewComponent implements OnInit, OnDestroy {
     showGenericNodes: true,
     showLngNodes: true,
     showBorderNodes: true,
-    showMaritimeSegments: true
+    showMaritimeSegments: true,
+    showMaritimeNodes: true
   };
 
   ngOnInit(): void {
@@ -62,16 +63,22 @@ export class MapViewComponent implements OnInit, OnDestroy {
       nodes: this.pipelineService.getNodes(),
       iggielgnSegments: this.pipelineService.getPipelineSegments(),
       gemSegments: this.pipelineService.getGemSegments(),
-      maritimeSegments: this.pipelineService.getMaritimeSegments()
+      maritimeSegments: this.pipelineService.getMaritimeSegments(), 
+      maritimeNodes: this.pipelineService.getMaritimeNodes()
     }).subscribe({
-      next: ({ nodes, iggielgnSegments, gemSegments, maritimeSegments }) => {
+      next: ({ nodes, iggielgnSegments, gemSegments, maritimeSegments, maritimeNodes }) => {
+
+        this.pipelineLayer.clear();
+
         this.pipelineLayer.renderSegments({
           iggielgnSegments,
           gemSegments,
           maritimeSegments,
+          maritimeNodes,
           showIggielgnSegments: this.legendVisibility.showIggielgnSegments,
           showGemSegments: this.legendVisibility.showGemSegments,
-          showMaritimeSegments: this.legendVisibility.showMaritimeSegments
+          showMaritimeSegments: this.legendVisibility.showMaritimeSegments, 
+          showMaritimeNodes: this.legendVisibility.showMaritimeNodes
         });
 
         this.pipelineLayer.renderMarkers({
@@ -85,7 +92,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
     });
   }
 
-  private onMarkerClick(node: PipelineNode): void {
+  private onMarkerClick(node: Node): void {
     console.log('Marker clicked:', node);
   }
 

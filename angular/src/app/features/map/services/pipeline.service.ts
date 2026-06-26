@@ -2,8 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { BorderNode } from '../models/border-node.model';
-import { PipelineNode } from '../models/pipeline-node.model';
 import { GemPipelineSegment, RouteResponse, RouteSegment } from '../models/pipeline-segments';
+import { Node } from '../models/generic-node.model';
 
 interface RawRoutePathStep {
   seq: number;
@@ -35,8 +35,8 @@ export class PipelineService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = '/api/v1';
 
-  getNodes(): Observable<PipelineNode[]> {
-    return this.http.get<{ metadata: any; data: PipelineNode[] }>(`${this.apiUrl}/iggielgn/nodes-unified`)
+  getNodes(): Observable<Node[]> {
+    return this.http.get<{ metadata: any; data: Node[] }>(`${this.apiUrl}/iggielgn/nodes-unified`)
       .pipe(map(res => res.data));
   }
 
@@ -54,6 +54,14 @@ export class PipelineService {
     return this.http
       .get<{ metadata: any; data: GemPipelineSegment[] }>(`${this.apiUrl}/gem/segments`)
       .pipe(map(res => res.data));
+  }
+
+  getMaritimeNodes(limit?: number): Observable<Node[]> {
+    let url = `${this.apiUrl}/maritime-routes/nodes`;
+    if (limit) {
+      url += `?limit=${limit}`;
+    }
+    return this.http.get<Node[]>(url);
   }
 
   getMaritimeSegments(limit?: number): Observable<RouteSegment[]> {

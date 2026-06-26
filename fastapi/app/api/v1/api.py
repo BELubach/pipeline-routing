@@ -8,7 +8,8 @@ from app.api.v1.endpoints import (
     shipping_lanes,
     routing,
     simple_routing,
-    maritime_routes
+    maritime_routes, 
+    internetworkrouting
 )
 
 api_router = APIRouter()
@@ -22,3 +23,4 @@ api_router.include_router(shipping_lanes.router, prefix="/shipping-lanes", tags=
 api_router.include_router(simple_routing.router, prefix="/routes", tags=["simple-routing"])
 api_router.include_router(routing.router, prefix="/routing", tags=["routing"])
 api_router.include_router(maritime_routes.router, prefix="/maritime-routes", tags=["maritime-routes"])
+api_router.include_router(internetworkrouting.router, prefix="/internetwork-routing", tags=["internetwork-routing"])

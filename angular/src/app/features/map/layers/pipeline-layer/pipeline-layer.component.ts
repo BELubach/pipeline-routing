@@ -1,8 +1,8 @@
 import * as L from 'leaflet';
 
-import { PipelineNode } from '../../models/pipeline-node.model';
 import { GemPipelineSegment, RouteSegment } from '../../models/pipeline-segments';
 import { NodeMarkerUtil } from '../../utils/node-marker.util';
+import { Node } from '../../models/generic-node.model';
 
 export interface NodeTypeFilter {
     type: string;
@@ -16,16 +16,18 @@ interface SegmentRenderConfig {
     iggielgnSegments: RouteSegment[];
     gemSegments: GemPipelineSegment[];
     maritimeSegments: RouteSegment[];
+    maritimeNodes: Node[];
     showIggielgnSegments: boolean;
     showGemSegments: boolean;
     showMaritimeSegments: boolean;
+    showMaritimeNodes: boolean;
 }
 
 interface MarkerRenderConfig {
-    nodes: PipelineNode[];
+    nodes: Node[];
     nodeTypes: NodeTypeFilter[];
     fitBounds: boolean;
-    onMarkerClick: (node: PipelineNode) => void;
+    onMarkerClick: (node: Node) => void;
 }
 
 export class PipelineLayerComponent {
@@ -51,8 +53,6 @@ export class PipelineLayerComponent {
         if (!this.map) {
             return;
         }
-
-        this.segmentsLayer.clearLayers();
 
         if (config.showIggielgnSegments) {
             config.iggielgnSegments.forEach((segment) => {
@@ -85,6 +85,13 @@ export class PipelineLayerComponent {
                 });
             });
         }
+
+        if (config.showMaritimeNodes) {
+            config.maritimeNodes.forEach((node) => {
+                const marker = NodeMarkerUtil.createNodeMarker(node).addTo(this.markersLayer);
+                marker.bindPopup(`Node ID: ${node.id}`);
+            });
+        }
     }
 
     /**
@@ -98,11 +105,9 @@ export class PipelineLayerComponent {
             return 0;
         }
 
-        this.markersLayer.clearLayers();
-
         const selectedTypes = new Set(config.nodeTypes.filter((nodeType) => nodeType.selected).map((nodeType) => nodeType.type));
         const seenCoordinates = new Set<string>();
-        const uniqueNodes: PipelineNode[] = [];
+        const uniqueNodes: Node[] = [];
 
         for (const node of config.nodes) {
             // skip nodes that don't have valid coordinates
@@ -138,6 +143,8 @@ export class PipelineLayerComponent {
         return uniqueNodes.length;
     }
 
+
+
     /** Draws a single continuous line from an array of [lon, lat] coordinate pairs. */
     private drawLineString(coordinates: [number, number][] | null | undefined, style: L.PolylineOptions): void {
         if (!coordinates) {
@@ -157,4 +164,9 @@ export class PipelineLayerComponent {
             L.polyline(line.map(([lon, lat]) => [lat, lon] as [number, number]), style).addTo(this.segmentsLayer);
         });
     }
+
+    private drawNodeMarker(node: Node, onClick: (node: Node) => void): void {
+        const marker = NodeMarkerUtil.createNodeMarker(node).addTo(this.markersLayer);
+        marker.on('click', () => onClick(node));
+    }   
 }

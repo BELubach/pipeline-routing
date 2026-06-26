@@ -7,8 +7,9 @@ from sqlalchemy import func, select
 from app.db.session import get_db
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.schemas.base import Segment
+from app.schemas.base import Node, Segment
 from app.models.maritime_routes import MaritimeRoutes as MaritimeRouteModel
+from app.models.maritime_routes import MaritimeRoutesVertices
 router = APIRouter()
 
 
@@ -41,3 +42,33 @@ async def list_datasets(
     ]
 
     return segments
+
+
+@router.get("/nodes", response_model=list[Node])
+async def list_maritime_route_nodes(
+    db: AsyncSession = Depends(get_db),
+    limit: int | None = Query(
+        None, description="Limit number of records returned (default: all)"),
+) -> list[Node]:
+
+    statement = (
+        select(
+            MaritimeRoutesVertices
+        )
+    )
+    if limit:
+        statement = statement.limit(limit)
+
+    result = await db.execute(statement)
+    rows = result.all()
+    nodes = [
+        Node(
+            id=node.id,
+            lat=node.y,
+            lon=node.x,
+
+        )
+        for node, in rows
+    ]
+
+    return nodes

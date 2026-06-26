@@ -5,3 +5,6 @@ class MaritimeRouteSegment(Segment):
     """GeoJSON Geometry schema"""
     
     name: Optional[str] = None
+
+
+    

@@ -3,9 +3,10 @@ Routing service layer - handles all routing business logic
 """
 import json
 from typing import List, Dict, Any
+from unittest import result
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.schemas.routing import RouteNode, NeighborNode, RouteSummary
+from app.schemas.routing import RouteNode, NeighborNode, RouteSummary, InterNetworkRouteStep, InterNetworkRouteResult
 
 
 
@@ -178,3 +179,115 @@ async def get_route_summary(
     )
     
     return summary
+
+
+# Offset applied to maritime node IDs to keep them distinct from pipeline node IDs
+# in the unified_network pgRouting graph.
+MARITIME_NODE_OFFSET = 10_000_000
+
+
+async def get_internetwork_route(
+    db: AsyncSession,
+    start_node_id: int,
+    start_node_type: str,
+    end_node_id: int,
+    end_node_type: str,
+) -> InterNetworkRouteResult:
+    """
+    Find the shortest route between any two nodes across the unified pipeline
+    and maritime network.
+
+    Pipeline nodes are stored with their natural IDs; maritime nodes are offset
+    by MARITIME_NODE_OFFSET inside the unified_network table so their IDs never
+    clash with pipeline node IDs.  This function handles the translation
+    transparently so callers always work with the original (external) IDs.
+
+    Args:
+        db: Database session
+        start_node_id: External ID of the starting node
+        start_node_type: 'pipeline' or 'maritime'
+        end_node_id: External ID of the destination node
+        end_node_type: 'pipeline' or 'maritime'
+
+    Returns:
+        InterNetworkRouteResult containing each hop with its network type and
+        cumulative distance in kilometres.
+
+    Raises:
+        ValueError: If no route exists between the two nodes.
+    """
+
+    def _to_internal(node_id: int, node_type: str) -> int:
+        return node_id + MARITIME_NODE_OFFSET if node_type == "maritime" else node_id
+
+    def _to_external(internal_id: int) -> tuple[int, str]:
+        if internal_id >= MARITIME_NODE_OFFSET:
+            return internal_id - MARITIME_NODE_OFFSET, "maritime"
+        return internal_id, "pipeline"
+
+    start_internal = _to_internal(start_node_id, start_node_type)
+    end_internal   = _to_internal(end_node_id, end_node_type)
+    print(start_internal, end_internal)
+    result = await db.execute(
+    text("""
+        SELECT
+            r.seq,
+            r.node,
+            r.edge,
+            r.cost AS segment_km,
+            SUM(r.cost) OVER (ORDER BY r.seq ROWS UNBOUNDED PRECEDING) AS cumulative_km,
+            u.network
+        FROM pgr_dijkstra(
+            'SELECT id, source, target, cost FROM unified_network',
+            CAST(:start_id AS BIGINT), -- Safe bind param + standard SQL cast
+            CAST(:end_id AS BIGINT),   -- Safe bind param + standard SQL cast
+            false 
+        ) AS r
+        LEFT JOIN unified_network u ON u.id = r.edge
+        ORDER BY r.seq
+    """),
+    {"start_id": start_internal, "end_id": end_internal}, # This dictionary is now actively used!
+)
+
+    rows = result.fetchall()
+
+    if not rows:
+        raise ValueError(
+            f"No route found between "
+            f"{start_node_type} node {start_node_id} and "
+            f"{end_node_type} node {end_node_id}"
+        )
+
+    steps: list[InterNetworkRouteStep] = []
+    for row in rows:
+        if row.edge == -1:
+            # pgRouting appends a terminal sentinel row with edge = -1; skip it.
+            continue
+
+        node_id, node_type = _to_external(row.node)
+        
+
+        steps.append(
+            InterNetworkRouteStep(
+                seq=row.seq,
+                node_id=node_id,
+                node_type=node_type,
+                edge_id=row.edge,
+                segment_km=round(float(row.segment_km), 3),
+                cumulative_km=round(float(row.cumulative_km), 3),
+                network=row.network or "unknown",
+            )
+        )
+
+    total_km = steps[-1].cumulative_km if steps else 0.0
+
+    return InterNetworkRouteResult(
+        start_node_id=start_node_id,
+        start_node_type=start_node_type,
+        end_node_id=end_node_id,
+        end_node_type=end_node_type,
+        total_km=round(total_km, 3),
+        steps=steps,
+    )
+
+
