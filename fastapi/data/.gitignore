@@ -1,0 +1,6 @@
+# Ignore large GeoJSON data files
+*.geojson
+*.json
+
+# Keep check scripts
+!checks/

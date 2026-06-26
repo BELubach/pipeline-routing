@@ -59,5 +59,4 @@ docker-compose.override.yml
 # Logs
 *.log
 
-data/
 boot/data/
